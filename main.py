@@ -123,17 +123,6 @@ network_client.start()
 uno_online = UnoOnline(
     network_client
 )
-network_events = network_client.update()
-for network_event in network_events:
-
-    if (
-        network_event.get("type")
-        == "game_started"
-        and network_event.get("game")
-        == "uno"
-    ):
-
-        state = "uno_online"
 multiplayer_lobby = (
     MultiplayerLobby(
         network_client
@@ -229,7 +218,19 @@ while running:
 
     dt = clock.tick(FPS) / 1000
 
-    network_client.update()
+    network_events = network_client.update()
+
+    for network_event in network_events:
+
+        if (
+            network_event.get("type")
+            == "game_started"
+            and network_event.get("game")
+            == "uno"
+        ):
+
+            state = "uno_online"
+
     stats.update()
 
 
