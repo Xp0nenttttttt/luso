@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environnement virtuel
+venv/
+.venv/
+
+# Secrets
+.env
+
+# Admin local
+admin.py
+
+# Données locales du joueur
+data/stats.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
