@@ -1,3 +1,16 @@
+import os
+import sys
+from pathlib import Path
+
+
+# Quand le jeu est compilé en .exe,
+# on utilise le dossier de l'exécutable
+# comme dossier de travail.
+if getattr(sys, "frozen", False):
+    os.chdir(
+        Path(sys.executable).resolve().parent
+    )
+
 import pygame
 try:
     from admin import AdminPanel
