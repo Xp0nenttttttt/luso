@@ -41,7 +41,12 @@ class MultiplayerLobby:
                 60
             )
         )
-
+        self.start_uno_rect = pygame.Rect(
+            480,
+            515,
+            320,
+            55
+        )
         self.input_rect = (
             pygame.Rect(
                 430,
@@ -136,7 +141,16 @@ class MultiplayerLobby:
         ):
 
             if self.network.room:
+                if (
+                    self.is_host()
+                    and self.start_uno_rect.collidepoint(
+                        mouse_pos
+                    )
+                ):
 
+                    self.network.start_uno()
+
+                    return None
                 if self.leave_rect.collidepoint(
                     mouse_pos
                 ):
@@ -475,13 +489,55 @@ class MultiplayerLobby:
                 mouse_pos
             )
 
-            coming = (
-                self.small_font.render(
-                    "Lancement de UNO bientôt...",
+            player_count = len(
+                room["players"]
+            )
+
+
+            if self.is_host():
+
+                self.draw_button(
+                    screen,
+                    self.start_uno_rect,
+                    "LANCER UNO",
+                    mouse_pos
+                )
+
+                if player_count != 2:
+
+                    info = self.small_font.render(
+                        "Il faut 2 joueurs pour lancer UNO.",
+                        True,
+                        "#8992a8"
+                    )
+
+                    screen.blit(
+                        info,
+                        info.get_rect(
+                            center=(
+                                640,
+                                490
+                            )
+                        )
+                    )
+
+            else:
+
+                waiting = self.small_font.render(
+                    "En attente de l'hôte...",
                     True,
                     "#8992a8"
                 )
-            )
+
+                screen.blit(
+                    waiting,
+                    waiting.get_rect(
+                        center=(
+                            640,
+                            540
+                        )
+                    )
+                )
 
             screen.blit(
                 coming,
@@ -516,3 +572,16 @@ class MultiplayerLobby:
                     )
                 )
             )
+    def is_host(self):
+
+        room = self.network.room
+
+        if room is None:
+            return False
+
+        return (
+            room.get(
+                "host_id"
+            )
+            == self.network.client_id
+        )

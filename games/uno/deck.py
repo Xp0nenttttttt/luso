@@ -131,7 +131,7 @@ class Deck:
 
     def draw(self):
 
-        if len(self.cards) == 0:
+        if not self.cards:
             return None
 
         return self.cards.pop()

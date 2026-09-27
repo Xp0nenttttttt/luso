@@ -3,7 +3,7 @@ import json
 import uuid
 
 from websockets.asyncio.server import serve
-
+from server.uno_room import UnoRoom
 from server.rooms import RoomManager
 
 
@@ -12,7 +12,7 @@ PORT = 8765
 
 
 rooms = RoomManager()
-
+uno_games = {}
 clients = {}
 
 player_names = {}
@@ -162,7 +162,107 @@ async def handle_client(
             # -------------------------
             # CREATE ROOM
             # -------------------------
+            elif message_type == "start_uno":
 
+                room = rooms.get_player_room(
+                    player_id
+                )
+
+                if room is None:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message": "Tu n'es dans aucune room."
+                        }
+                    )
+
+                    continue
+
+
+                # Seul l'hôte peut lancer
+                if room.host_id != player_id:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message": "Seul l'hôte peut lancer la partie."
+                        }
+                    )
+
+                    continue
+
+
+                # Pour notre V1 :
+                # exactement 2 joueurs
+                if len(room.players) != 2:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message": "UNO nécessite 2 joueurs pour le moment."
+                        }
+                    )
+
+                    continue
+
+
+                # Evite de lancer deux parties
+                if room.code in uno_games:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message": "Une partie est déjà lancée."
+                        }
+                    )
+
+                    continue
+
+
+                uno_game = UnoRoom(
+                    room
+                )
+
+                uno_games[
+                    room.code
+                ] = uno_game
+
+
+                print(
+                    f"[UNO] Partie créée dans {room.code}"
+                )
+
+
+                # Dit aux deux clients
+                # de changer d'écran
+                for target_id in room.players:
+
+                    target_socket = clients.get(
+                        target_id
+                    )
+
+                    if target_socket is None:
+                        continue
+
+                    await send_json(
+                        target_socket,
+                        {
+                            "type": "game_started",
+                            "game": "uno"
+                        }
+                    )
+
+
+                # Puis envoie leur état personnalisé
+                await broadcast_uno_state(
+                    room,
+                    uno_game
+                )
             elif message_type == "create_room":
 
                 old_room = (
@@ -261,10 +361,14 @@ async def handle_client(
 
             elif message_type == "leave_room":
 
-                room = (
-                    rooms.get_player_room(
-                        player_id
-                    )
+                room = rooms.get_player_room(
+                    player_id
+                )
+
+                old_code = (
+                    room.code
+                    if room
+                    else None
                 )
 
                 rooms.leave_room(
@@ -282,6 +386,15 @@ async def handle_client(
                     room
                 )
 
+                if (
+                    old_code
+                    and old_code in uno_games
+                ):
+
+                    uno_games.pop(
+                        old_code,
+                        None
+                    )
     except Exception as error:
 
         print(
@@ -356,3 +469,44 @@ if __name__ == "__main__":
     asyncio.run(
         main()
     )
+
+async def broadcast_uno_state(
+    room,
+    uno_game
+):
+
+    if room is None:
+        return
+
+    for player_id in list(
+        room.players.keys()
+    ):
+
+        websocket = clients.get(
+            player_id
+        )
+
+        if websocket is None:
+            continue
+
+        state = uno_game.serialize_for(
+            player_id,
+            room
+        )
+
+        try:
+
+            await send_json(
+                websocket,
+                {
+                    "type": "uno_state",
+                    "state": state
+                }
+            )
+
+        except Exception as error:
+
+            print(
+                "[UNO SEND ERROR]",
+                error
+            )

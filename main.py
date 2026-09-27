@@ -10,7 +10,7 @@ except ImportError:
 
 from network.client import NetworkClient
 from network.config import SERVER_URL
-
+from games.uno.uno_online import UnoOnline
 from multiplayer.lobby import MultiplayerLobby
 from player import Player
 from mainmenu import MainMenu
@@ -93,6 +93,7 @@ friend_profile = FriendProfile()
 arcade = Arcade(stats)
 
 uno_game = UnoGame(progression)
+
 # --------------------------------
 # ETAT DU JEU
 # --------------------------------
@@ -119,7 +120,20 @@ network_client = NetworkClient(
 
 network_client.start()
 
+uno_online = UnoOnline(
+    network_client
+)
+network_events = network_client.update()
+for network_event in network_events:
 
+    if (
+        network_event.get("type")
+        == "game_started"
+        and network_event.get("game")
+        == "uno"
+    ):
+
+        state = "uno_online"
 multiplayer_lobby = (
     MultiplayerLobby(
         network_client
@@ -300,7 +314,16 @@ while running:
             elif action == "quit":
 
                 running = False
-                
+        elif state == "uno_online":
+
+            result = uno_online.handle_event(
+                event,
+                mouse_pos
+            )
+
+            if result == "back":
+
+                state = "multiplayer"
         elif state == "uno":
         
                 uno_game.handle_event(
@@ -487,7 +510,12 @@ while running:
             game_surface,
             mouse_pos
         )
+    elif state == "uno_online":
 
+        uno_online.draw(
+            game_surface,
+            mouse_pos
+        )
     elif state == "multiplayer":
 
         multiplayer_lobby.draw(

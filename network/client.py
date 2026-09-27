@@ -14,7 +14,9 @@ class NetworkClient:
         url,
         player_name
     ):
+        self.game = None
 
+        self.uno_state = None
         self.url = url
 
         self.player_name = (
@@ -356,7 +358,34 @@ class NetworkClient:
                 ):
 
                     self.room = None
+                elif (
+                    message_type
+                    == "game_started"
+                ):
+                
+                    self.game = (
+                    message.get(
+                        "game"
+                    )
+                )
+                elif (
+                    message_type
+                    == "uno_state"
+                ):
 
+                    self.uno_state = (
+                        message.get(
+                            "state"
+                        )
+                    )
+                elif (
+                    message_type
+                    == "room_left"
+                ):
+
+                    self.room = None
+                    self.game = None
+                    self.uno_state = None
                 elif (
                     message_type
                     == "error"
@@ -371,7 +400,7 @@ class NetworkClient:
                 events.append(
                     message
                 )
-
+                
         return events
 
     # ---------------------------------
@@ -396,3 +425,13 @@ class NetworkClient:
                 )
             except RuntimeError:
                 pass
+    
+    def start_uno(self):
+
+        self.last_error = None
+
+        self.send(
+            {
+                "type": "start_uno"
+            }
+        )
