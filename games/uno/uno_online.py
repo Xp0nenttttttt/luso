@@ -483,39 +483,50 @@ class UnoOnline:
         # ---------------------------------
         # TA MAIN
         # ---------------------------------
-        if my_turn:
-
-            hovered = (
-                self.draw_rect.collidepoint(
-                    mouse_pos
-                )
+        hovered = (
+            my_turn
+            and self.draw_rect.collidepoint(
+                mouse_pos
             )
+        )
 
-            color = (
-                "#404a64"
-                if not hovered
-                else "#586681"
-            )
+        draw_color = (
+            "#586681"
+            if hovered
+            else "#404a64"
+            if my_turn
+            else "#252936"
+        )
 
-            pygame.draw.rect(
-                screen,
-                color,
-                self.draw_rect,
-                border_radius=10
-            )
+        pygame.draw.rect(
+            screen,
+            draw_color,
+            self.draw_rect,
+            border_radius=10
+        )
 
-            text = self.font.render(
-                "PIOCHER",
-                True,
-                "white"
-            )
+        draw_label = (
+            "PIOCHER"
+            if my_turn
+            else "ATTENDS"
+        )
+        draw_font = (
+            self.font
+            if my_turn
+            else self.small_font
+        )
+        text = draw_font.render(
+            draw_label,
+            True,
+            "white"
+        )
 
-            screen.blit(
-                text,
-                text.get_rect(
-                    center=self.draw_rect.center
-                )
+        screen.blit(
+            text,
+            text.get_rect(
+                center=self.draw_rect.center
             )
+        )
         hand = state[
             "your_hand"
         ]
@@ -574,10 +585,7 @@ class UnoOnline:
             )
 
 
-            if (
-                index not in playable_indices
-                or not my_turn
-            ):
+            if index not in playable_indices:
 
                 dark_overlay = pygame.Surface(
                     (

@@ -35,8 +35,8 @@ class UnoRoom:
 
         self.active_color = None
 
-        self.turn_index = random.randrange(
-            len(self.player_ids)
+        self.turn_index = self.player_ids.index(
+            room.host_id
         )
 
         self.winner_id = None
@@ -479,12 +479,7 @@ class UnoRoom:
 
         playable_indices = []
 
-        if (
-            self.winner_id is None
-            and self.is_player_turn(
-                player_id
-            )
-        ):
+        if self.winner_id is None:
 
             for index, card in enumerate(
                 hand
