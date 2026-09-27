@@ -435,3 +435,30 @@ class NetworkClient:
                 "type": "start_uno"
             }
         )
+    
+    def uno_play_card(
+        self,
+        hand_index,
+        chosen_color=None
+    ):
+
+        self.last_error = None
+
+        self.send(
+            {
+                "type": "uno_play_card",
+                "hand_index": hand_index,
+                "chosen_color": chosen_color
+            }
+        )
+
+
+    def uno_draw_card(self):
+
+        self.last_error = None
+
+        self.send(
+            {
+                "type": "uno_draw_card"
+            }
+        )

@@ -358,7 +358,129 @@ async def handle_client(
             # -------------------------
             # LEAVE ROOM
             # -------------------------
+            elif message_type == "uno_play_card":
 
+                room = rooms.get_player_room(
+                    player_id
+                )
+
+                if room is None:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message": "Room introuvable."
+                        }
+                    )
+
+                    continue
+
+
+                uno_game = uno_games.get(
+                    room.code
+                )
+
+                if uno_game is None:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message": "Aucune partie UNO."
+                        }
+                    )
+
+                    continue
+
+
+                try:
+
+                    hand_index = int(
+                        data.get(
+                            "hand_index"
+                        )
+                    )
+
+                    chosen_color = (
+                        data.get(
+                            "chosen_color"
+                        )
+                    )
+
+
+                    uno_game.play_card(
+                        player_id,
+                        hand_index,
+                        chosen_color
+                    )
+
+
+                except (
+                    ValueError,
+                    TypeError
+                ) as error:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message": str(
+                                error
+                            )
+                        }
+                    )
+
+                    continue
+
+
+                await broadcast_uno_state(
+                    room,
+                    uno_game
+                )
+            elif message_type == "uno_draw_card":
+
+                room = rooms.get_player_room(
+                    player_id
+                )
+
+                if room is None:
+                    continue
+
+
+                uno_game = uno_games.get(
+                    room.code
+                )
+
+                if uno_game is None:
+                    continue
+
+
+                try:
+
+                    uno_game.draw_card(
+                        player_id
+                    )
+
+                except ValueError as error:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message": str(
+                                error
+                            )
+                        }
+                    )
+
+                    continue
+
+
+                await broadcast_uno_state(
+                    room,
+                    uno_game
+                )
             elif message_type == "leave_room":
 
                 room = rooms.get_player_room(
