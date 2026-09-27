@@ -2,6 +2,7 @@ import asyncio
 import json
 import threading
 import queue
+import time
 
 from websockets.asyncio.client import connect
 
@@ -62,9 +63,14 @@ class NetworkClient:
 
     def _thread_main(self):
 
-        asyncio.run(
-            self._network_main()
-        )
+        while self._running:
+
+            asyncio.run(
+                self._network_main()
+            )
+
+            if self._running:
+                time.sleep(2)
 
     # ---------------------------------
     # NETWORK LOOP
