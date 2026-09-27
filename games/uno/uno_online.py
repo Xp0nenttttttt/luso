@@ -1133,13 +1133,6 @@ class UnoOnline:
                 avatar,
                 avatar_rect
             )
-            pygame.draw.circle(
-                screen,
-                self.theme["accent"] if active else "#7586a5",
-                avatar_center,
-                28,
-                2
-            )
         else:
             pygame.draw.circle(
                 screen,
