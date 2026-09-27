@@ -464,12 +464,6 @@ async def main():
         await asyncio.Future()
 
 
-if __name__ == "__main__":
-
-    asyncio.run(
-        main()
-    )
-
 async def broadcast_uno_state(
     room,
     uno_game
@@ -510,3 +504,10 @@ async def broadcast_uno_state(
                 "[UNO SEND ERROR]",
                 error
             )
+
+
+if __name__ == "__main__":
+
+    asyncio.run(
+        main()
+    )
