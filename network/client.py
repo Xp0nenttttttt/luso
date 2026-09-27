@@ -12,12 +12,15 @@ class NetworkClient:
     def __init__(
         self,
         url,
-        player_name
+        player_name,
+        player_character="lucie"
     ):
         self.game = None
 
         self.uno_state = None
         self.url = url
+
+        self.player_character = player_character
 
         self.player_name = (
             player_name
@@ -112,8 +115,8 @@ class NetworkClient:
                     json.dumps(
                         {
                             "type": "hello",
-                            "name":
-                            self.player_name
+                            "name": self.player_name,
+                            "character": self.player_character
                         }
                     )
                 )

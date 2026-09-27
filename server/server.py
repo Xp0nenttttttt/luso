@@ -16,7 +16,7 @@ uno_games = {}
 clients = {}
 
 player_names = {}
-
+player_characters = {}
 
 # ---------------------------------
 # ENVOI JSON
@@ -101,7 +101,7 @@ async def handle_client(
     player_names[player_id] = (
         "Player"
     )
-
+    player_characters[player_id] = "lucie"
     print(
         f"[+] Connexion : {player_id}"
     )
@@ -137,7 +137,19 @@ async def handle_client(
             # -------------------------
 
             if message_type == "hello":
+                character = str(
+                    data.get(
+                        "character",
+                        "lucie"
+                    )
+                ).strip()
 
+                if not character:
+                    character = "lucie"
+
+                player_characters[
+                    player_id
+                ] = character
                 name = (
                     str(
                         data.get(
@@ -438,7 +450,8 @@ async def handle_client(
 
                 room = rooms.create_room(
                     player_id,
-                    player_names[player_id]
+                    player_names[player_id],
+                    player_characters[player_id]
                 )
 
                 print(
@@ -474,7 +487,8 @@ async def handle_client(
                     room = rooms.join_room(
                         player_id,
                         player_names[player_id],
-                        code
+                        code,
+                        player_characters[player_id]
                     )
 
                 except ValueError as error:
@@ -700,7 +714,10 @@ async def handle_client(
             player_id,
             None
         )
-
+        player_characters.pop(
+            player_id,
+            None
+        )
         print(
             f"[-] Déconnexion : {player_id}"
         )

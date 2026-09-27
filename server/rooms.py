@@ -30,7 +30,7 @@ class Room:
     )
 
     def serialize(self):
-
+        
         player_list = []
 
         for player_id, data in self.players.items():
@@ -42,7 +42,11 @@ class Room:
                     "host": (
                         player_id
                         == self.host_id
-                    )
+                    ),
+                    "character": data.get(
+                        "character",
+                        "lucie"
+                    ),
                 }
             )
 
@@ -86,7 +90,8 @@ class RoomManager:
     def create_room(
         self,
         player_id,
-        player_name
+        player_name,
+        player_character="lucie"
     ):
 
         self.leave_room(
@@ -101,7 +106,8 @@ class RoomManager:
         )
 
         room.players[player_id] = {
-            "name": player_name
+            "name": player_name,
+            "character": player_character
         }
 
         self.rooms[code] = room
@@ -120,7 +126,8 @@ class RoomManager:
         self,
         player_id,
         player_name,
-        code
+        code,
+        player_character="lucie"
     ):
 
         code = code.upper()
@@ -147,7 +154,8 @@ class RoomManager:
         )
 
         room.players[player_id] = {
-            "name": player_name
+            "name": player_name,
+            "character": player_character
         }
 
         self.player_rooms[

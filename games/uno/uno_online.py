@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pygame
 
 
@@ -16,6 +18,12 @@ class UnoOnline:
         self,
         network
     ):
+        self.last_action_id = None
+
+        self.card_animation = None
+
+        self.card_animation_duration = 0.28
+        self.avatar_cache = {}
         self.theme = {
             "bg": "#0b0e16",
             "table": "#131a27",
@@ -595,6 +603,10 @@ class UnoOnline:
             self.draw_player_panel(
                 screen,
                 opponent["name"],
+                opponent.get(
+                    "character",
+                    "lucie"
+                ),
                 opponent["card_count"],
                 pygame.Rect(
                     80,
@@ -623,6 +635,10 @@ class UnoOnline:
             self.draw_player_panel(
                 screen,
                 my_player["name"],
+                my_player.get(
+                    "character",
+                    "lucie"
+                ),
                 len(
                     state[
                         "your_hand"
@@ -851,7 +867,9 @@ class UnoOnline:
                     )
                 )
             )
-
+        self.draw_card_animation(
+            screen
+        )
 
         # =================================================
         # VICTOIRE
@@ -1067,11 +1085,52 @@ class UnoOnline:
         self,
         screen,
         name,
+        character,
         card_count,
         rect,
         active=False
     ):
+        avatar_center = (
+            rect.x + 38,
+            rect.centery
+        )
 
+        avatar = self.get_avatar(
+            character
+        )
+
+
+        if avatar is not None:
+
+            avatar_rect = avatar.get_rect(
+                center=avatar_center
+            )
+
+            screen.blit(
+                avatar,
+                avatar_rect
+            )
+
+            pygame.draw.circle(
+                screen,
+                (
+                    self.theme["accent"]
+                    if active
+                    else "#7586a5"
+                ),
+                avatar_center,
+                28,
+                2
+            )
+
+        else:
+
+            pygame.draw.circle(
+                screen,
+                "#3c4860",
+                avatar_center,
+                25
+            )
         color = (
             "#21384a"
             if active
@@ -1129,7 +1188,7 @@ class UnoOnline:
         screen.blit(
             name_text,
             (
-                rect.x + 70,
+                rect.x + 80,
                 rect.y + 12
             )
         )
@@ -1143,7 +1202,7 @@ class UnoOnline:
         screen.blit(
             cards_text,
             (
-                rect.x + 70,
+                rect.x + 80,
                 rect.y + 45
             )
         )
@@ -1579,3 +1638,266 @@ class UnoOnline:
                     4,
                     border_radius=14
                 )
+    def get_avatar(
+        self,
+        character
+    ):
+
+        if character in self.avatar_cache:
+
+            return self.avatar_cache[
+                character
+            ]
+
+
+        path = (
+            Path("assets")
+            / "characters"
+            / character
+            / "profile_icon.png"
+        )
+
+
+        if not path.exists():
+
+            self.avatar_cache[
+                character
+            ] = None
+
+            return None
+
+
+        try:
+
+            image = pygame.image.load(
+                path
+            ).convert_alpha()
+
+            image = pygame.transform.smoothscale(
+                image,
+                (
+                    52,
+                    52
+                )
+            )
+
+            self.avatar_cache[
+                character
+            ] = image
+
+            return image
+
+        except pygame.error:
+
+            self.avatar_cache[
+                character
+            ] = None
+
+            return None
+    
+    def update(
+        self,
+        dt
+    ):
+
+        state = self.network.uno_state
+
+        if state is None:
+            return
+
+
+        action = state.get(
+            "last_action"
+        )
+
+        if action is not None:
+
+            action_id = action.get(
+                "id"
+            )
+
+            if (
+                action_id
+                != self.last_action_id
+            ):
+
+                self.last_action_id = (
+                    action_id
+                )
+
+                if (
+                    action.get("type")
+                    == "play_card"
+                ):
+
+                    self.start_card_animation(
+                        action,
+                        state
+                    )
+
+
+        # -----------------------------
+        # UPDATE ANIMATION
+        # -----------------------------
+
+        if self.card_animation:
+
+            self.card_animation[
+                "time"
+            ] += dt
+
+            if (
+                self.card_animation["time"]
+                >= self.card_animation_duration
+            ):
+
+                self.card_animation = None
+    
+    def start_card_animation(
+        self,
+        action,
+        state
+    ):
+
+        player_id = action.get(
+            "player_id"
+        )
+
+        card = action.get(
+            "card"
+        )
+
+        if card is None:
+            return
+
+
+        # Moi = depuis le bas
+        if (
+            player_id
+            == state["your_id"]
+        ):
+
+            start = (
+                640,
+                600
+            )
+
+        # Adversaire = depuis le haut
+        else:
+
+            start = (
+                640,
+                145
+            )
+
+
+        end = (
+            640,
+            330
+        )
+
+
+        self.card_animation = {
+            "card": card,
+            "start": start,
+            "end": end,
+            "time": 0.0
+        }
+    
+    def draw_card_animation(
+        self,
+        screen
+    ):
+
+        animation = (
+            self.card_animation
+        )
+
+        if animation is None:
+            return
+
+
+        progress = (
+            animation["time"]
+            / self.card_animation_duration
+        )
+
+        progress = max(
+            0,
+            min(
+                1,
+                progress
+            )
+        )
+
+
+        # Petit easing
+        progress = (
+            1
+            - (1 - progress) ** 3
+        )
+
+
+        start_x, start_y = (
+            animation["start"]
+        )
+
+        end_x, end_y = (
+            animation["end"]
+        )
+
+
+        x = (
+            start_x
+            + (
+                end_x
+                - start_x
+            )
+            * progress
+        )
+
+        y = (
+            start_y
+            + (
+                end_y
+                - start_y
+            )
+            * progress
+        )
+
+
+        # La carte grossit légèrement
+        scale = (
+            0.85
+            + 0.15 * progress
+        )
+
+        width = int(
+            90 * scale
+        )
+
+        height = int(
+            130 * scale
+        )
+
+
+        rect = pygame.Rect(
+            0,
+            0,
+            width,
+            height
+        )
+
+        rect.center = (
+            int(x),
+            int(y)
+        )
+
+
+        self.draw_card(
+            screen,
+            animation["card"],
+            rect,
+            playable=True,
+            hovered=False
+        )

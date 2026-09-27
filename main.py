@@ -113,9 +113,24 @@ player_name = (
         "Player"
     )
 )
+profile_data = stats.data.get(
+    "profile",
+    {}
+)
+
+player_name = profile_data.get(
+    "display_name",
+    "Player"
+)
+
+player_character = profile_data.get(
+    "character",
+    "pink_girl"
+)
 network_client = NetworkClient(
     SERVER_URL,
-    player_name
+    player_name,
+    player_character
 )
 
 network_client.start()
@@ -219,7 +234,11 @@ while running:
     dt = clock.tick(FPS) / 1000
 
     network_events = network_client.update()
+    if state == "uno_online":
 
+        uno_online.update(
+            dt
+        )
     for network_event in network_events:
         if (
             network_event.get("type")

@@ -16,7 +16,8 @@ class UnoRoom:
         self,
         room
     ):
-
+        self.action_id = 0
+        self.last_action = None
         self.room_code = room.code
         self.replay_votes = set()
         self.player_ids = list(
@@ -305,6 +306,19 @@ class UnoRoom:
         self.discard_pile.append(
             card
         )
+        self.action_id += 1
+
+        self.last_action = {
+            "id": self.action_id,
+
+            "type": "play_card",
+
+            "player_id": player_id,
+
+            "card": self.serialize_card(
+                card
+            )
+        }
 
         # Couleur active
         if card.color is None:
@@ -430,6 +444,13 @@ class UnoRoom:
         ].append(
             card
         )
+        self.action_id += 1
+
+        self.last_action = {
+            "id": self.action_id,
+            "type": "draw_card",
+            "player_id": player_id
+        }
 
         # Dans notre règle :
         # piocher termine le tour.
@@ -461,6 +482,10 @@ class UnoRoom:
                     "name": data.get(
                         "name",
                         "Player"
+                    ),
+                    "character": data.get(
+                        "character",
+                        "pink_girl"
                     ),
 
                     "card_count": len(
@@ -513,7 +538,8 @@ class UnoRoom:
 
             "playable_indices":
                 playable_indices,
-
+            "last_action":
+                self.last_action,
             "top_card":
                 self.serialize_card(
                     self.discard_pile[-1]
