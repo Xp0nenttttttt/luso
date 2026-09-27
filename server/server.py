@@ -1,14 +1,19 @@
 import asyncio
 import json
 import uuid
-
+import os
 from websockets.asyncio.server import serve
 from server.uno_room import UnoRoom
 from server.rooms import RoomManager
 
 
 HOST = "0.0.0.0"
-PORT = 8765
+PORT = int(
+    os.environ.get(
+        "PORT",
+        8765
+    )
+)
 
 
 rooms = RoomManager()
