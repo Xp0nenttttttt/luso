@@ -1,5 +1,5 @@
 import pygame
-from pathlib import Path
+from asset_paths import asset_path
 
 
 class Player:
@@ -184,7 +184,11 @@ class Player:
     # --------------------------------
 
     def load_animations(self):
-        base_path = Path("assets/characters/lucie")
+        base_path = asset_path(
+            "assets",
+            "characters",
+            "lucie"
+        )
 
         idle_sheet = self.load_sheet(
             base_path / "idle.png"

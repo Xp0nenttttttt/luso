@@ -1,6 +1,7 @@
+import pygame
 from pathlib import Path
 
-import pygame
+from asset_paths import asset_path
 
 
 class UnoOnline:
@@ -1622,21 +1623,21 @@ class UnoOnline:
             ]
 
 
-        path = (
-            Path("assets")
-            / "characters"
-            / character
-            / "pfp.png"
+        path = asset_path(
+            "assets",
+            "characters",
+            character,
+            "pfp.png"
         )
 
 
         if not path.is_file():
 
-            path = (
-                Path("assets")
-                / "characters"
-                / "lucie"
-                / "pfp.png"
+            path = asset_path(
+                "assets",
+                "characters",
+                "lucie",
+                "pfp.png"
             )
 
         if not path.is_file():

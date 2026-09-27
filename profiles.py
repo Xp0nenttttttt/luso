@@ -1,7 +1,9 @@
 import pygame
 from datetime import datetime
 from pathlib import Path
-profile_path = Path("assets/profile")
+from asset_paths import asset_path
+
+profile_path = asset_path("assets", "profile")
 
 class Profile:
     def __init__(self, stats, progression):
@@ -30,8 +32,9 @@ class Profile:
         # -----------------------------
         # ASSETS PROFIL
         # -----------------------------
-        self.profile_assets = Path(
-            "assets/profile"
+        self.profile_assets = asset_path(
+            "assets",
+            "profile"
         )
 
         self.profile_icons = {
@@ -121,7 +124,12 @@ class Profile:
         # -----------------------------
 
         self.profile_icon = pygame.image.load(
-            "assets/characters/lucie/pfp.png"
+            asset_path(
+                "assets",
+                "characters",
+                "lucie",
+                "pfp.png"
+            )
         ).convert_alpha()
 
         self.profile_icon = pygame.transform.scale(
@@ -135,7 +143,12 @@ class Profile:
         # -----------------------------
 
         idle_sheet = pygame.image.load(
-            "assets/characters/lucie/idle.png"
+            asset_path(
+                "assets",
+                "characters",
+                "lucie",
+                "idle.png"
+            )
         ).convert_alpha()
 
         FRAME_SIZE = 340

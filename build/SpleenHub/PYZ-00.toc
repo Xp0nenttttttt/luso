@@ -42,6 +42,7 @@
   ('argparse',
    'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\argparse.py',
    'PYMODULE'),
+  ('asset_paths', 'C:\\Users\\User\\Desktop\\luso\\asset_paths.py', 'PYMODULE'),
   ('ast',
    'C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\ast.py',
    'PYMODULE'),

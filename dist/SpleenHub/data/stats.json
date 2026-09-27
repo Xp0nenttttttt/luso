@@ -1,0 +1,33 @@
+{
+    "total_playtime_seconds": 7,
+    "launch_count": 1,
+    "first_launch": "2026-09-27T20:06:29",
+    "last_launch": "2026-09-27T20:06:29",
+    "games": {},
+    "progression": {
+        "level": 1,
+        "xp": 0,
+        "total_xp": 0
+    },
+    "unlocks": {
+        "titles": [
+            "default"
+        ],
+        "banners": [
+            "default"
+        ],
+        "card_backs": [
+            "default"
+        ]
+    },
+    "profile": {
+        "display_name": "Player",
+        "username": "player",
+        "bio": "Bienvenue dans mon hub !",
+        "status": "online",
+        "character": "default",
+        "title": "default",
+        "banner": "default",
+        "card_back": "default"
+    }
+}
