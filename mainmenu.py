@@ -46,7 +46,7 @@ class MainMenu:
                 "action": "profile",
                 "rect": pygame.Rect(
                     440,
-                    300,
+                    380,
                     400,
                     65
                 )
@@ -57,7 +57,7 @@ class MainMenu:
                 "action": "friends",
                 "rect": pygame.Rect(
                     440,
-                    380,
+                    460,
                     400,
                     65
                 )
@@ -68,7 +68,7 @@ class MainMenu:
                 "action": "options",
                 "rect": pygame.Rect(
                     440,
-                    460,
+                    540,
                     400,
                     65
                 )
@@ -79,7 +79,7 @@ class MainMenu:
                 "action": "quit",
                 "rect": pygame.Rect(
                     440,
-                    540,
+                    620,
                     400,
                     65
                 )

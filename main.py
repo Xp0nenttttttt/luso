@@ -7,7 +7,8 @@ try:
 except ImportError:
 
     ADMIN_AVAILABLE = False
-    from network.client import NetworkClient
+
+from network.client import NetworkClient
 from network.config import SERVER_URL
 
 from multiplayer.lobby import MultiplayerLobby

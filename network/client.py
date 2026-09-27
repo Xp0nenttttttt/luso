@@ -204,13 +204,17 @@ class NetworkClient:
         if (
             self._loop is None
             or self._outgoing is None
+            or self._loop.is_closed()
         ):
             return
 
-        self._loop.call_soon_threadsafe(
-            self._outgoing.put_nowait,
-            message
-        )
+        try:
+            self._loop.call_soon_threadsafe(
+                self._outgoing.put_nowait,
+                message
+            )
+        except RuntimeError:
+            pass
 
     # ---------------------------------
     # ACTIONS
@@ -376,9 +380,13 @@ class NetworkClient:
             self._loop is not None
             and self._outgoing
             is not None
+            and not self._loop.is_closed()
         ):
 
-            self._loop.call_soon_threadsafe(
-                self._outgoing.put_nowait,
-                None
-            )
+            try:
+                self._loop.call_soon_threadsafe(
+                    self._outgoing.put_nowait,
+                    None
+                )
+            except RuntimeError:
+                pass
