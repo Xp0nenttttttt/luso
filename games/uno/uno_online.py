@@ -342,6 +342,133 @@ class UnoOnline:
             )
         )
 
+    def draw_game_over(
+        self,
+        screen,
+        state,
+        mouse_pos
+    ):
+
+        overlay = pygame.Surface(
+            (1280, 720),
+            pygame.SRCALPHA
+        )
+        overlay.fill((5, 7, 13, 220))
+        screen.blit(overlay, (0, 0))
+
+        winner_id = state["winner_id"]
+        winner_name = next(
+            (
+                player["name"]
+                for player in state["players"]
+                if player["id"] == winner_id
+            ),
+            "Joueur"
+        )
+        result = (
+            "VICTOIRE !"
+            if winner_id == state["your_id"]
+            else f"{winner_name} gagne"
+        )
+        result_color = (
+            "#62e6a2"
+            if winner_id == state["your_id"]
+            else "#f07b8d"
+        )
+
+        result_text = self.title_font.render(
+            result,
+            True,
+            result_color
+        )
+        screen.blit(
+            result_text,
+            result_text.get_rect(center=(640, 240))
+        )
+
+        replay_votes = set(
+            state.get("replay_votes", [])
+        )
+        votes_text = self.small_font.render(
+            f"Rejouer : {len(replay_votes)}/{state.get('replay_required', 2)}",
+            True,
+            "#aab1c1"
+        )
+        screen.blit(
+            votes_text,
+            votes_text.get_rect(center=(640, 330))
+        )
+
+        for index, player in enumerate(state["players"]):
+            status = (
+                "PRÊT"
+                if player["id"] in replay_votes
+                else "..."
+            )
+            line = self.small_font.render(
+                f"{player['name']} : {status}",
+                True,
+                "#d8dce6"
+            )
+            screen.blit(
+                line,
+                line.get_rect(
+                    center=(640, 360 + index * 27)
+                )
+            )
+
+        already_voted = state["your_id"] in replay_votes
+        replay_hover = self.replay_rect.collidepoint(mouse_pos)
+        replay_color = (
+            "#365e54"
+            if already_voted
+            else "#4c9679"
+            if replay_hover
+            else "#39755e"
+        )
+        replay_label = (
+            "EN ATTENTE..."
+            if already_voted
+            else "REJOUER"
+        )
+
+        pygame.draw.rect(
+            screen,
+            replay_color,
+            self.replay_rect,
+            border_radius=10
+        )
+        replay_text = self.font.render(
+            replay_label,
+            True,
+            "white"
+        )
+        screen.blit(
+            replay_text,
+            replay_text.get_rect(center=self.replay_rect.center)
+        )
+
+        lobby_color = (
+            "#4a546d"
+            if self.lobby_rect.collidepoint(mouse_pos)
+            else "#373e52"
+        )
+        pygame.draw.rect(
+            screen,
+            lobby_color,
+            self.lobby_rect,
+            border_radius=10
+        )
+        lobby_text = self.font.render(
+            "RETOUR AU LOBBY",
+            True,
+            "white"
+        )
+        screen.blit(
+            lobby_text,
+            lobby_text.get_rect(center=self.lobby_rect.center)
+        )
+
     # ---------------------------------
     # DRAW
     # ---------------------------------
@@ -378,6 +505,14 @@ class UnoOnline:
                 )
             )
 
+            return
+
+        if state.get("winner_id") is not None:
+            self.draw_game_over(
+                screen,
+                state,
+                mouse_pos
+            )
             return
 
 
@@ -654,315 +789,6 @@ class UnoOnline:
                     dark_overlay,
                     rect.topleft
                 )
-            winner_id = state.get(
-                "winner_id"
-            )
-
-
-            if winner_id is not None:
-
-                # =============================================
-                # OVERLAY
-                # =============================================
-
-                overlay = pygame.Surface(
-                    (
-                        1280,
-                        720
-                    ),
-                    pygame.SRCALPHA
-                )
-
-                overlay.fill(
-                    (
-                        5,
-                        7,
-                        13,
-                        220
-                    )
-                )
-
-                screen.blit(
-                    overlay,
-                    (0, 0)
-                )
-
-
-                # =============================================
-                # GAGNANT
-                # =============================================
-
-                winner_name = "Joueur"
-
-                for player in state[
-                    "players"
-                ]:
-
-                    if (
-                        player["id"]
-                        == winner_id
-                    ):
-
-                        winner_name = (
-                            player["name"]
-                        )
-
-                        break
-
-
-                if (
-                    winner_id
-                    == state["your_id"]
-                ):
-
-                    result = "VICTOIRE !"
-
-                    result_color = (
-                        "#62e6a2"
-                    )
-
-                else:
-
-                    result = (
-                        f"{winner_name} gagne"
-                    )
-
-                    result_color = (
-                        "#f07b8d"
-                    )
-
-
-                result_text = (
-                    self.title_font.render(
-                        result,
-                        True,
-                        result_color
-                    )
-                )
-
-                screen.blit(
-                    result_text,
-                    result_text.get_rect(
-                        center=(
-                            640,
-                            240
-                        )
-                    )
-                )
-
-
-                # =============================================
-                # VOTES REPLAY
-                # =============================================
-
-                replay_votes = set(
-                    state.get(
-                        "replay_votes",
-                        []
-                    )
-                )
-
-
-                votes_text = self.small_font.render(
-                    (
-                        f"Rejouer : "
-                        f"{len(replay_votes)}"
-                        f"/"
-                        f"{state.get('replay_required', 2)}"
-                    ),
-                    True,
-                    "#aab1c1"
-                )
-
-
-                screen.blit(
-                    votes_text,
-                    votes_text.get_rect(
-                        center=(
-                            640,
-                            330
-                        )
-                    )
-                )
-
-
-                # =============================================
-                # JOUEURS
-                # =============================================
-
-                x = 640
-
-                player_lines = []
-
-
-                for player in state[
-                    "players"
-                ]:
-
-                    accepted = (
-                        player["id"]
-                        in replay_votes
-                    )
-
-
-                    status = (
-                        "PRÊT"
-                        if accepted
-                        else "..."
-                    )
-
-
-                    player_lines.append(
-                        f"{player['name']} : {status}"
-                    )
-
-
-                y = 360
-
-
-                for line in player_lines:
-
-                    line_text = (
-                        self.small_font.render(
-                            line,
-                            True,
-                            "#d8dce6"
-                        )
-                    )
-
-                    screen.blit(
-                        line_text,
-                        line_text.get_rect(
-                            center=(
-                                x,
-                                y
-                            )
-                        )
-                    )
-
-                    y += 27
-
-
-                # =============================================
-                # BOUTON REJOUER
-                # =============================================
-
-                already_voted = (
-                    state["your_id"]
-                    in replay_votes
-                )
-
-
-                if already_voted:
-
-                    replay_color = (
-                        "#365e54"
-                    )
-
-                    replay_text = (
-                        "EN ATTENTE..."
-                    )
-
-                else:
-
-                    replay_hover = (
-                        self.replay_rect
-                        .collidepoint(
-                            mouse_pos
-                        )
-                    )
-
-                    replay_color = (
-                        "#39755e"
-                        if not replay_hover
-                        else "#4c9679"
-                    )
-
-                    replay_text = (
-                        "REJOUER"
-                    )
-
-
-                pygame.draw.rect(
-                    screen,
-                    replay_color,
-                    self.replay_rect,
-                    border_radius=10
-                )
-
-
-                replay_render = (
-                    self.font.render(
-                        replay_text,
-                        True,
-                        "white"
-                    )
-                )
-
-
-                screen.blit(
-                    replay_render,
-                    replay_render.get_rect(
-                        center=
-                            self.replay_rect.center
-                    )
-                )
-
-
-                # =============================================
-                # RETOUR LOBBY
-                # =============================================
-
-                lobby_hover = (
-                    self.lobby_rect
-                    .collidepoint(
-                        mouse_pos
-                    )
-                )
-
-
-                lobby_color = (
-                    "#373e52"
-                    if not lobby_hover
-                    else "#4a546d"
-                )
-
-
-                pygame.draw.rect(
-                    screen,
-                    lobby_color,
-                    self.lobby_rect,
-                    border_radius=10
-                )
-
-
-                lobby_render = (
-                    self.font.render(
-                        "RETOUR AU LOBBY",
-                        True,
-                        "white"
-                    )
-                )
-
-
-                screen.blit(
-                    lobby_render,
-                    lobby_render.get_rect(
-                        center=
-                            self.lobby_rect.center
-                    )
-                )
-
-
-                return
-
-
-                
-
-               
-                
-
-                return
             if (
                 self.pending_wild_index
                 is not None
