@@ -16,6 +16,29 @@ class UnoOnline:
         self,
         network
     ):
+        self.theme = {
+            "bg": "#0b0e16",
+            "table": "#131a27",
+            "table_inner": "#182233",
+
+            "panel": "#161b28",
+            "panel_alt": "#20283a",
+
+            "border": "#303b52",
+
+            "text": "#ffffff",
+            "muted": "#8d97aa",
+
+            "accent": "#62d9ff",
+            "success": "#5de39a",
+
+            "red": "#e74c3c",
+            "blue": "#3498db",
+            "green": "#2ecc71",
+            "yellow": "#f1c40f"
+        }
+
+        self.card_hover_y = 18
         self.card_rects = []
 
         self.pending_wild_index = None
@@ -297,42 +320,65 @@ class UnoOnline:
         self,
         screen,
         card,
-        rect
+        rect,
+        playable=True,
+        hovered=False
     ):
 
         color = self.COLORS.get(
-            card.get(
-                "color"
-            ),
+            card.get("color"),
             "#252936"
         )
 
+        # Ombre
+        shadow = pygame.Rect(
+            rect.x + 5,
+            rect.y + 7,
+            rect.width,
+            rect.height
+        )
+
+        pygame.draw.rect(
+            screen,
+            "#05070c",
+            shadow,
+            border_radius=12
+        )
+
+        # Carte
         pygame.draw.rect(
             screen,
             color,
             rect,
-            border_radius=10
+            border_radius=12
         )
 
-        pygame.draw.rect(
+        # Zone intérieure
+        inner = rect.inflate(
+            -14,
+            -14
+        )
+
+        pygame.draw.ellipse(
             screen,
-            "white",
-            rect,
-            3,
-            border_radius=10
+            "#f5f5f5",
+            inner
         )
 
+        # Valeur
         value = str(
             card.get(
                 "value",
                 "?"
             )
-        )
+        ).upper()
+
+        text_color = color
 
         text = self.font.render(
             value,
             True,
-            "white"
+            text_color
         )
 
         screen.blit(
@@ -342,133 +388,66 @@ class UnoOnline:
             )
         )
 
-    def draw_game_over(
-        self,
-        screen,
-        state,
-        mouse_pos
-    ):
-
-        overlay = pygame.Surface(
-            (1280, 720),
-            pygame.SRCALPHA
+        # Petit symbole en haut
+        small = self.small_font.render(
+            value,
+            True,
+            "white"
         )
-        overlay.fill((5, 7, 13, 220))
-        screen.blit(overlay, (0, 0))
 
-        winner_id = state["winner_id"]
-        winner_name = next(
+        screen.blit(
+            small,
             (
-                player["name"]
-                for player in state["players"]
-                if player["id"] == winner_id
-            ),
-            "Joueur"
-        )
-        result = (
-            "VICTOIRE !"
-            if winner_id == state["your_id"]
-            else f"{winner_name} gagne"
-        )
-        result_color = (
-            "#62e6a2"
-            if winner_id == state["your_id"]
-            else "#f07b8d"
-        )
-
-        result_text = self.title_font.render(
-            result,
-            True,
-            result_color
-        )
-        screen.blit(
-            result_text,
-            result_text.get_rect(center=(640, 240))
-        )
-
-        replay_votes = set(
-            state.get("replay_votes", [])
-        )
-        votes_text = self.small_font.render(
-            f"Rejouer : {len(replay_votes)}/{state.get('replay_required', 2)}",
-            True,
-            "#aab1c1"
-        )
-        screen.blit(
-            votes_text,
-            votes_text.get_rect(center=(640, 330))
-        )
-
-        for index, player in enumerate(state["players"]):
-            status = (
-                "PRÊT"
-                if player["id"] in replay_votes
-                else "..."
+                rect.x + 9,
+                rect.y + 7
             )
-            line = self.small_font.render(
-                f"{player['name']} : {status}",
-                True,
-                "#d8dce6"
+        )
+
+        # Carte non jouable
+        if not playable:
+
+            overlay = pygame.Surface(
+                (
+                    rect.width,
+                    rect.height
+                ),
+                pygame.SRCALPHA
             )
-            screen.blit(
-                line,
-                line.get_rect(
-                    center=(640, 360 + index * 27)
+
+            overlay.fill(
+                (
+                    0,
+                    0,
+                    0,
+                    130
                 )
             )
 
-        already_voted = state["your_id"] in replay_votes
-        replay_hover = self.replay_rect.collidepoint(mouse_pos)
-        replay_color = (
-            "#365e54"
-            if already_voted
-            else "#4c9679"
-            if replay_hover
-            else "#39755e"
-        )
-        replay_label = (
-            "EN ATTENTE..."
-            if already_voted
-            else "REJOUER"
-        )
+            screen.blit(
+                overlay,
+                rect.topleft
+            )
 
-        pygame.draw.rect(
-            screen,
-            replay_color,
-            self.replay_rect,
-            border_radius=10
-        )
-        replay_text = self.font.render(
-            replay_label,
-            True,
-            "white"
-        )
-        screen.blit(
-            replay_text,
-            replay_text.get_rect(center=self.replay_rect.center)
-        )
+        # Hover
+        if hovered:
 
-        lobby_color = (
-            "#4a546d"
-            if self.lobby_rect.collidepoint(mouse_pos)
-            else "#373e52"
-        )
-        pygame.draw.rect(
-            screen,
-            lobby_color,
-            self.lobby_rect,
-            border_radius=10
-        )
-        lobby_text = self.font.render(
-            "RETOUR AU LOBBY",
-            True,
-            "white"
-        )
-        screen.blit(
-            lobby_text,
-            lobby_text.get_rect(center=self.lobby_rect.center)
-        )
+            pygame.draw.rect(
+                screen,
+                self.theme["accent"],
+                rect,
+                4,
+                border_radius=12
+            )
 
+        elif playable:
+
+            pygame.draw.rect(
+                screen,
+                "#e7edf5",
+                rect,
+                2,
+                border_radius=12
+            )
     # ---------------------------------
     # DRAW
     # ---------------------------------
@@ -479,18 +458,18 @@ class UnoOnline:
         mouse_pos
     ):
 
-        screen.fill(
-            "#10131b"
+        self.draw_background(
+            screen
         )
 
         state = (
             self.network.uno_state
         )
-        self.card_rects = []
+
         if state is None:
 
             loading = self.title_font.render(
-                "Chargement de la partie...",
+                "Connexion à la partie...",
                 True,
                 "white"
             )
@@ -507,123 +486,165 @@ class UnoOnline:
 
             return
 
-        if state.get("winner_id") is not None:
-            self.draw_game_over(
-                screen,
-                state,
-                mouse_pos
-            )
-            return
 
+        # =================================================
+        # DONNEES
+        # =================================================
 
-        # ---------------------------------
-        # ROOM
-        # ---------------------------------
-
-        room_text = self.small_font.render(
-            f"ROOM {state['room_code']}",
-            True,
-            "#8f98ad"
-        )
-
-        screen.blit(
-            room_text,
-            (
-                30,
-                25
-            )
-        )
-
-
-        # ---------------------------------
-        # TOUR
-        # ---------------------------------
+        my_id = state[
+            "your_id"
+        ]
 
         my_turn = (
             state[
                 "current_player_id"
             ]
-            == state[
-                "your_id"
-            ]
+            == my_id
         )
+
+        opponent = (
+            self.get_opponent()
+        )
+
+        my_player = None
+
+        for player in state[
+            "players"
+        ]:
+
+            if player[
+                "id"
+            ] == my_id:
+
+                my_player = player
+
+                break
+
+
+        # =================================================
+        # ROOM
+        # =================================================
+
+        room_text = self.small_font.render(
+            f"ROOM {state['room_code']}",
+            True,
+            self.theme["muted"]
+        )
+
+        screen.blit(
+            room_text,
+            (
+                25,
+                22
+            )
+        )
+
+
+        # =================================================
+        # TOUR
+        # =================================================
 
         turn_text = (
             "À TON TOUR"
             if my_turn
-            else "Tour de l'adversaire"
+            else "TOUR DE L'ADVERSAIRE"
         )
 
         turn_color = (
-            "#57e09b"
+            self.theme["success"]
             if my_turn
-            else "#a2a9ba"
+            else self.theme["muted"]
         )
 
         rendered_turn = (
-            self.title_font.render(
+            self.font.render(
                 turn_text,
                 True,
                 turn_color
             )
         )
 
+        turn_bg = pygame.Rect(
+            490,
+            18,
+            300,
+            42
+        )
+
+        pygame.draw.rect(
+            screen,
+            "#151b28",
+            turn_bg,
+            border_radius=20
+        )
+
         screen.blit(
             rendered_turn,
             rendered_turn.get_rect(
-                center=(
-                    640,
-                    65
-                )
+                center=turn_bg.center
             )
         )
 
 
-        # ---------------------------------
-        # JOUEURS
-        # ---------------------------------
+        # =================================================
+        # ADVERSAIRE
+        # =================================================
 
-        y = 125
+        if opponent:
 
-        for player in state[
-            "players"
-        ]:
-
-            if (
-                player["id"]
-                == state["your_id"]
-            ):
-                continue
-
-            player_text = (
-                self.font.render(
-                    f"{player['name']}  "
-                    f"({player['card_count']} cartes)",
-                    True,
-                    "white"
-                )
+            self.draw_player_panel(
+                screen,
+                opponent["name"],
+                opponent["card_count"],
+                pygame.Rect(
+                    80,
+                    90,
+                    260,
+                    75
+                ),
+                state[
+                    "current_player_id"
+                ]
+                == opponent["id"]
             )
 
-            screen.blit(
-                player_text,
-                player_text.get_rect(
-                    center=(
-                        640,
-                        y
-                    )
-                )
+            self.draw_opponent_hand(
+                screen,
+                opponent
             )
 
-            y += 40
+
+        # =================================================
+        # TON PROFIL
+        # =================================================
+
+        if my_player:
+
+            self.draw_player_panel(
+                screen,
+                my_player["name"],
+                len(
+                    state[
+                        "your_hand"
+                    ]
+                ),
+                pygame.Rect(
+                    80,
+                    555,
+                    260,
+                    75
+                ),
+                my_turn
+            )
 
 
-        # ---------------------------------
+        # =================================================
         # CARTE CENTRALE
-        # ---------------------------------
+        # =================================================
 
         top_card_rect = pygame.Rect(
             595,
-            250,
+            265,
             90,
             130
         )
@@ -637,85 +658,72 @@ class UnoOnline:
         )
 
 
-        color_text = (
-            self.small_font.render(
-                "Couleur : "
-                + str(
-                    state[
-                        "active_color"
-                    ]
-                ),
-                True,
-                "#a7afc0"
-            )
+        # =================================================
+        # PIOCHE
+        # =================================================
+
+        self.draw_rect = pygame.Rect(
+            760,
+            265,
+            90,
+            130
         )
 
-        screen.blit(
-            color_text,
-            color_text.get_rect(
-                center=(
-                    640,
-                    410
-                )
-            )
-        )
-
-
-        # ---------------------------------
-        # TA MAIN
-        # ---------------------------------
-        hovered = (
-            my_turn
-            and self.draw_rect.collidepoint(
-                mouse_pos
-            )
-        )
-
-        draw_color = (
-            "#586681"
-            if hovered
-            else "#404a64"
-            if my_turn
-            else "#252936"
-        )
-
-        pygame.draw.rect(
+        self.draw_draw_pile(
             screen,
-            draw_color,
-            self.draw_rect,
-            border_radius=10
+            mouse_pos,
+            my_turn
         )
 
-        draw_label = (
-            "PIOCHER"
-            if my_turn
-            else "ATTENDS"
-        )
-        draw_font = (
-            self.font
-            if my_turn
-            else self.small_font
-        )
-        text = draw_font.render(
-            draw_label,
-            True,
-            "white"
+
+        # =================================================
+        # COULEUR ACTIVE
+        # =================================================
+
+        self.draw_active_color(
+            screen,
+            state[
+                "active_color"
+            ]
         )
 
-        screen.blit(
-            text,
-            text.get_rect(
-                center=self.draw_rect.center
-            )
-        )
+
+        # =================================================
+        # MAIN DU JOUEUR
+        # =================================================
+
         hand = state[
             "your_hand"
         ]
 
-        card_width = 80
-        card_height = 115
+        playable_indices = (
+            state.get(
+                "playable_indices",
+                []
+            )
+        )
 
-        spacing = 65
+        self.card_rects = []
+
+        card_width = 82
+        card_height = 118
+
+        # Les cartes peuvent se chevaucher
+        # si la main devient grande.
+        if len(hand) <= 10:
+
+            spacing = 67
+
+        else:
+
+            spacing = max(
+                35,
+                int(
+                    670
+                    / len(hand)
+                )
+            )
+
 
         total_width = (
             card_width
@@ -730,9 +738,40 @@ class UnoOnline:
             - total_width // 2
         )
 
-        y = 550
+
+        # Détermine d'abord
+        # quelle carte est survolée.
+        hovered_index = None
 
 
+        for index in reversed(
+            range(
+                len(hand)
+            )
+        ):
+
+            x = (
+                start_x
+                + index * spacing
+            )
+
+            test_rect = pygame.Rect(
+                x,
+                550,
+                card_width,
+                card_height
+            )
+
+            if test_rect.collidepoint(
+                mouse_pos
+            ):
+
+                hovered_index = index
+
+                break
+
+
+        # Dessin
         for index, card in enumerate(
             hand
         ):
@@ -742,12 +781,47 @@ class UnoOnline:
                 + index * spacing
             )
 
+            y = 550
+
+            hovered = (
+                index
+                == hovered_index
+            )
+
+            playable = (
+                my_turn
+                and index
+                in playable_indices
+            )
+
+            if (
+                hovered
+                and playable
+            ):
+
+                y -= self.card_hover_y
+
+
             rect = pygame.Rect(
                 x,
                 y,
                 card_width,
                 card_height
             )
+
+
+            self.draw_card(
+                screen,
+                card,
+                rect,
+                playable=playable,
+                hovered=(
+                    hovered
+                    and playable
+                )
+            )
+
+
             self.card_rects.append(
                 {
                     "index": index,
@@ -755,112 +829,753 @@ class UnoOnline:
                 }
             )
 
-            self.draw_card(
+
+        # =================================================
+        # MESSAGE D'ERREUR
+        # =================================================
+
+        if self.network.last_error:
+
+            error = self.small_font.render(
+                self.network.last_error,
+                True,
+                "#ff7185"
+            )
+
+            screen.blit(
+                error,
+                error.get_rect(
+                    center=(
+                        640,
+                        690
+                    )
+                )
+            )
+
+
+        # =================================================
+        # VICTOIRE
+        # =================================================
+
+        winner_id = state.get(
+            "winner_id"
+        )
+
+        if winner_id is not None:
+
+            self.draw_end_screen(
                 screen,
-                card,
+                mouse_pos,
+                state
+            )
+
+            return
+
+
+        # =================================================
+        # WILD
+        # =================================================
+
+        if (
+            self.pending_wild_index
+            is not None
+        ):
+
+            self.draw_color_selector(
+                screen,
+                mouse_pos
+            )
+    def get_opponent(self):
+
+        state = self.network.uno_state
+
+        if state is None:
+            return None
+
+        for player in state["players"]:
+
+            if player["id"] != state["your_id"]:
+                return player
+
+        return None
+    def draw_background(self, screen):
+
+        screen.fill(
+            self.theme["bg"]
+        )
+
+        # Grand panneau/table
+        table_rect = pygame.Rect(
+            55,
+            70,
+            1170,
+            575
+        )
+
+        pygame.draw.rect(
+            screen,
+            self.theme["table"],
+            table_rect,
+            border_radius=28
+        )
+
+        pygame.draw.rect(
+            screen,
+            self.theme["border"],
+            table_rect,
+            2,
+            border_radius=28
+        )
+
+        # Centre de la table
+        inner_rect = pygame.Rect(
+            220,
+            180,
+            840,
+            290
+        )
+
+        pygame.draw.rect(
+            screen,
+            self.theme["table_inner"],
+            inner_rect,
+            border_radius=150
+        )
+
+        pygame.draw.rect(
+            screen,
+            "#263349",
+            inner_rect,
+            2,
+            border_radius=150
+        )
+    def draw_card_back(
+        self,
+        screen,
+        rect
+    ):
+
+        shadow = pygame.Rect(
+            rect.x + 4,
+            rect.y + 5,
+            rect.width,
+            rect.height
+        )
+
+        pygame.draw.rect(
+            screen,
+            "#05070c",
+            shadow,
+            border_radius=10
+        )
+
+        pygame.draw.rect(
+            screen,
+            "#151d30",
+            rect,
+            border_radius=10
+        )
+
+        pygame.draw.rect(
+            screen,
+            "#53698d",
+            rect,
+            3,
+            border_radius=10
+        )
+
+        inner = rect.inflate(
+            -14,
+            -14
+        )
+
+        pygame.draw.rect(
+            screen,
+            "#202c45",
+            inner,
+            border_radius=8
+        )
+
+        # Motif
+        center = rect.center
+
+        pygame.draw.circle(
+            screen,
+            "#5bbfe7",
+            center,
+            18,
+            3
+        )
+
+        pygame.draw.circle(
+            screen,
+            "#334a68",
+            center,
+            9
+        )
+    def draw_opponent_hand(
+        self,
+        screen,
+        opponent
+    ):
+
+        if opponent is None:
+            return
+
+        card_count = opponent.get(
+            "card_count",
+            0
+        )
+
+        card_width = 55
+        card_height = 80
+
+        spacing = 28
+
+        total_width = (
+            card_width
+            + max(
+                0,
+                card_count - 1
+            ) * spacing
+        )
+
+        start_x = (
+            640
+            - total_width // 2
+        )
+
+        for index in range(
+            card_count
+        ):
+
+            rect = pygame.Rect(
+                start_x
+                + index * spacing,
+
+                105,
+
+                card_width,
+                card_height
+            )
+
+            self.draw_card_back(
+                screen,
                 rect
             )
-            playable_indices = state.get(
-                "playable_indices",
+    def draw_player_panel(
+        self,
+        screen,
+        name,
+        card_count,
+        rect,
+        active=False
+    ):
+
+        color = (
+            "#21384a"
+            if active
+            else self.theme["panel"]
+        )
+
+        pygame.draw.rect(
+            screen,
+            color,
+            rect,
+            border_radius=12
+        )
+
+        border = (
+            self.theme["accent"]
+            if active
+            else self.theme["border"]
+        )
+
+        pygame.draw.rect(
+            screen,
+            border,
+            rect,
+            2,
+            border_radius=12
+        )
+
+        # Avatar temporaire
+        avatar_center = (
+            rect.x + 33,
+            rect.centery
+        )
+
+        pygame.draw.circle(
+            screen,
+            "#3c4860",
+            avatar_center,
+            22
+        )
+
+        pygame.draw.circle(
+            screen,
+            "#7586a5",
+            avatar_center,
+            22,
+            2
+        )
+
+        name_text = self.font.render(
+            name,
+            True,
+            self.theme["text"]
+        )
+
+        screen.blit(
+            name_text,
+            (
+                rect.x + 70,
+                rect.y + 12
+            )
+        )
+
+        cards_text = self.small_font.render(
+            f"{card_count} cartes",
+            True,
+            self.theme["muted"]
+        )
+
+        screen.blit(
+            cards_text,
+            (
+                rect.x + 70,
+                rect.y + 45
+            )
+        )
+    def draw_draw_pile(
+        self,
+        screen,
+        mouse_pos,
+        enabled
+    ):
+
+        rect = self.draw_rect
+
+        # Faux empilement
+        for offset in [
+            10,
+            6,
+            3
+        ]:
+
+            stack_rect = pygame.Rect(
+                rect.x + offset,
+                rect.y - offset,
+                90,
+                130
+            )
+
+            pygame.draw.rect(
+                screen,
+                "#12192a",
+                stack_rect,
+                border_radius=10
+            )
+
+        pile_rect = pygame.Rect(
+            rect.x,
+            rect.y,
+            90,
+            130
+        )
+
+        self.draw_card_back(
+            screen,
+            pile_rect
+        )
+
+        hovered = (
+            pile_rect.collidepoint(
+                mouse_pos
+            )
+            and enabled
+        )
+
+        if hovered:
+
+            pygame.draw.rect(
+                screen,
+                self.theme["accent"],
+                pile_rect,
+                4,
+                border_radius=10
+            )
+
+        text = self.small_font.render(
+            "PIOCHER",
+            True,
+            (
+                "white"
+                if enabled
+                else self.theme["muted"]
+            )
+        )
+
+        screen.blit(
+            text,
+            text.get_rect(
+                center=(
+                    pile_rect.centerx,
+                    pile_rect.bottom + 25
+                )
+            )
+        )
+
+        # IMPORTANT :
+        # le rect utilisé pour cliquer
+        # devient celui de la pile.
+        self.draw_rect = pile_rect
+    def draw_active_color(
+        self,
+        screen,
+        active_color
+    ):
+
+        colors = {
+            "red": self.theme["red"],
+            "blue": self.theme["blue"],
+            "green": self.theme["green"],
+            "yellow": self.theme["yellow"]
+        }
+
+        color = colors.get(
+            active_color,
+            "#555555"
+        )
+
+        label = self.small_font.render(
+            "COULEUR ACTIVE",
+            True,
+            self.theme["muted"]
+        )
+
+        screen.blit(
+            label,
+            label.get_rect(
+                center=(
+                    640,
+                    430
+                )
+            )
+        )
+
+        pygame.draw.circle(
+            screen,
+            color,
+            (
+                640,
+                463
+            ),
+            14
+        )
+
+        pygame.draw.circle(
+            screen,
+            "white",
+            (
+                640,
+                463
+            ),
+            14,
+            2
+        )
+    def draw_end_screen(
+        self,
+        screen,
+        mouse_pos,
+        state
+    ):
+
+        winner_id = state.get(
+            "winner_id"
+        )
+
+        overlay = pygame.Surface(
+            (
+                1280,
+                720
+            ),
+            pygame.SRCALPHA
+        )
+
+        overlay.fill(
+            (
+                5,
+                7,
+                13,
+                220
+            )
+        )
+
+        screen.blit(
+            overlay,
+            (0, 0)
+        )
+
+
+        winner_name = "Joueur"
+
+        for player in state[
+            "players"
+        ]:
+
+            if player[
+                "id"
+            ] == winner_id:
+
+                winner_name = player[
+                    "name"
+                ]
+
+                break
+
+
+        if (
+            winner_id
+            == state[
+                "your_id"
+            ]
+        ):
+
+            result = "VICTOIRE !"
+
+            color = (
+                self.theme["success"]
+            )
+
+        else:
+
+            result = (
+                f"{winner_name} gagne"
+            )
+
+            color = "#ff7285"
+
+
+        title = self.title_font.render(
+            result,
+            True,
+            color
+        )
+
+        screen.blit(
+            title,
+            title.get_rect(
+                center=(
+                    640,
+                    250
+                )
+            )
+        )
+
+
+        replay_votes = set(
+            state.get(
+                "replay_votes",
                 []
+            )
+        )
+
+
+        votes = self.small_font.render(
+            f"Rejouer : "
+            f"{len(replay_votes)}"
+            f"/"
+            f"{state.get('replay_required', 2)}",
+            True,
+            self.theme["muted"]
+        )
+
+        screen.blit(
+            votes,
+            votes.get_rect(
+                center=(
+                    640,
+                    320
+                )
+            )
+        )
+
+
+        already_voted = (
+            state["your_id"]
+            in replay_votes
+        )
+
+
+        # REPLAY
+        replay_hover = (
+            self.replay_rect
+            .collidepoint(
+                mouse_pos
+            )
+        )
+
+
+        if already_voted:
+
+            replay_color = (
+                "#315548"
+            )
+
+            replay_label = (
+                "EN ATTENTE..."
+            )
+
+        else:
+
+            replay_color = (
+                "#447b65"
+                if not replay_hover
+                else "#58a080"
+            )
+
+            replay_label = (
+                "REJOUER"
             )
 
 
-            if index not in playable_indices:
+        pygame.draw.rect(
+            screen,
+            replay_color,
+            self.replay_rect,
+            border_radius=10
+        )
 
-                dark_overlay = pygame.Surface(
-                    (
-                        rect.width,
-                        rect.height
-                    ),
-                    pygame.SRCALPHA
+
+        text = self.font.render(
+            replay_label,
+            True,
+            "white"
+        )
+
+        screen.blit(
+            text,
+            text.get_rect(
+                center=
+                    self.replay_rect.center
+            )
+        )
+
+
+        # LOBBY
+        lobby_hover = (
+            self.lobby_rect
+            .collidepoint(
+                mouse_pos
+            )
+        )
+
+        lobby_color = (
+            "#343b4e"
+            if not lobby_hover
+            else "#48536b"
+        )
+
+        pygame.draw.rect(
+            screen,
+            lobby_color,
+            self.lobby_rect,
+            border_radius=10
+        )
+
+
+        lobby_text = self.font.render(
+            "RETOUR AU LOBBY",
+            True,
+            "white"
+        )
+
+        screen.blit(
+            lobby_text,
+            lobby_text.get_rect(
+                center=
+                    self.lobby_rect.center
+            )
+        )
+    def draw_color_selector(
+        self,
+        screen,
+        mouse_pos
+    ):
+
+        overlay = pygame.Surface(
+            (
+                1280,
+                720
+            ),
+            pygame.SRCALPHA
+        )
+
+        overlay.fill(
+            (
+                0,
+                0,
+                0,
+                200
+            )
+        )
+
+        screen.blit(
+            overlay,
+            (0, 0)
+        )
+
+
+        title = self.title_font.render(
+            "CHOISIS UNE COULEUR",
+            True,
+            "white"
+        )
+
+        screen.blit(
+            title,
+            title.get_rect(
+                center=(
+                    640,
+                    240
                 )
+            )
+        )
 
-                dark_overlay.fill(
-                    (
-                        0,
-                        0,
-                        0,
-                        125
-                    )
+
+        colors = {
+            "red": self.theme["red"],
+            "blue": self.theme["blue"],
+            "green": self.theme["green"],
+            "yellow": self.theme["yellow"]
+        }
+
+
+        for color, rect in (
+            self.color_rects.items()
+        ):
+
+            hovered = (
+                rect.collidepoint(
+                    mouse_pos
                 )
+            )
 
-                screen.blit(
-                    dark_overlay,
-                    rect.topleft
+            pygame.draw.rect(
+                screen,
+                colors[color],
+                rect,
+                border_radius=14
+            )
+
+
+            if hovered:
+
+                pygame.draw.rect(
+                    screen,
+                    "white",
+                    rect,
+                    4,
+                    border_radius=14
                 )
-            if (
-                self.pending_wild_index
-                is not None
-            ):
-
-                overlay = pygame.Surface(
-                    (
-                        1280,
-                        720
-                    ),
-                    pygame.SRCALPHA
-                )
-
-                overlay.fill(
-                    (
-                        0,
-                        0,
-                        0,
-                        185
-                    )
-                )
-
-                screen.blit(
-                    overlay,
-                    (0, 0)
-                )
-
-
-                title = self.title_font.render(
-                    "CHOISIS UNE COULEUR",
-                    True,
-                    "white"
-                )
-
-                screen.blit(
-                    title,
-                    title.get_rect(
-                        center=(
-                            640,
-                            250
-                        )
-                    )
-                )
-
-
-                colors = {
-                    "red": "#e74c3c",
-                    "blue": "#3498db",
-                    "green": "#2ecc71",
-                    "yellow": "#f1c40f"
-                }
-
-
-                for color, rect in (
-                    self.color_rects.items()
-                ):
-
-                    pygame.draw.rect(
-                        screen,
-                        colors[color],
-                        rect,
-                        border_radius=15
-                    )
-
-                    if rect.collidepoint(
-                        mouse_pos
-                    ):
-
-                        pygame.draw.rect(
-                            screen,
-                            "white",
-                            rect,
-                            4,
-                            border_radius=15
-                        )
