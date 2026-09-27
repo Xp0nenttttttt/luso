@@ -60,7 +60,19 @@ class UnoOnline:
         }
 
         self.network = network
+        self.replay_rect = pygame.Rect(
+            390,
+            450,
+            230,
+            60
+        )
 
+        self.lobby_rect = pygame.Rect(
+            660,
+            450,
+            230,
+            60
+        )
         self.title_font = pygame.font.Font(
             None,
             50
@@ -136,7 +148,41 @@ class UnoOnline:
         # =================================================
         # NORMAL
         # =================================================
+        state = self.network.uno_state
+        if (
+            state is not None
+            and state.get(
+                "winner_id"
+            ) is not None
+        ):
 
+            if (
+                event.type
+                == pygame.MOUSEBUTTONDOWN
+                and event.button == 1
+            ):
+
+                if self.replay_rect.collidepoint(
+                    mouse_pos
+                ):
+
+                    self.network.uno_replay_vote()
+
+                    return None
+
+
+                if self.lobby_rect.collidepoint(
+                    mouse_pos
+                ):
+
+                    self.network.uno_return_lobby()
+
+                    return None
+
+
+            # Empêche de jouer des cartes
+            # après la fin de partie.
+            return None
         if event.type == pygame.KEYDOWN:
 
             if event.key == pygame.K_ESCAPE:
@@ -615,6 +661,37 @@ class UnoOnline:
 
             if winner_id is not None:
 
+                # =============================================
+                # OVERLAY
+                # =============================================
+
+                overlay = pygame.Surface(
+                    (
+                        1280,
+                        720
+                    ),
+                    pygame.SRCALPHA
+                )
+
+                overlay.fill(
+                    (
+                        5,
+                        7,
+                        13,
+                        220
+                    )
+                )
+
+                screen.blit(
+                    overlay,
+                    (0, 0)
+                )
+
+
+                # =============================================
+                # GAGNANT
+                # =============================================
+
                 winner_name = "Joueur"
 
                 for player in state[
@@ -633,29 +710,6 @@ class UnoOnline:
                         break
 
 
-                overlay = pygame.Surface(
-                    (
-                        1280,
-                        720
-                    ),
-                    pygame.SRCALPHA
-                )
-
-                overlay.fill(
-                    (
-                        0,
-                        0,
-                        0,
-                        190
-                    )
-                )
-
-                screen.blit(
-                    overlay,
-                    (0, 0)
-                )
-
-
                 if (
                     winner_id
                     == state["your_id"]
@@ -663,26 +717,67 @@ class UnoOnline:
 
                     result = "VICTOIRE !"
 
-                    color = "#64e6a2"
+                    result_color = (
+                        "#62e6a2"
+                    )
 
                 else:
 
                     result = (
-                        f"{winner_name} gagne !"
+                        f"{winner_name} gagne"
                     )
 
-                    color = "#ff7285"
+                    result_color = (
+                        "#f07b8d"
+                    )
 
 
-                text = self.title_font.render(
-                    result,
-                    True,
-                    color
+                result_text = (
+                    self.title_font.render(
+                        result,
+                        True,
+                        result_color
+                    )
                 )
 
                 screen.blit(
-                    text,
-                    text.get_rect(
+                    result_text,
+                    result_text.get_rect(
+                        center=(
+                            640,
+                            240
+                        )
+                    )
+                )
+
+
+                # =============================================
+                # VOTES REPLAY
+                # =============================================
+
+                replay_votes = set(
+                    state.get(
+                        "replay_votes",
+                        []
+                    )
+                )
+
+
+                votes_text = self.small_font.render(
+                    (
+                        f"Rejouer : "
+                        f"{len(replay_votes)}"
+                        f"/"
+                        f"{state.get('replay_required', 2)}"
+                    ),
+                    True,
+                    "#aab1c1"
+                )
+
+
+                screen.blit(
+                    votes_text,
+                    votes_text.get_rect(
                         center=(
                             640,
                             330
@@ -691,21 +786,181 @@ class UnoOnline:
                 )
 
 
-                info = self.font.render(
-                    "ESC pour retourner au lobby",
-                    True,
-                    "#b1b7c6"
-                )
+                # =============================================
+                # JOUEURS
+                # =============================================
 
-                screen.blit(
-                    info,
-                    info.get_rect(
-                        center=(
-                            640,
-                            395
+                x = 640
+
+                player_lines = []
+
+
+                for player in state[
+                    "players"
+                ]:
+
+                    accepted = (
+                        player["id"]
+                        in replay_votes
+                    )
+
+
+                    status = (
+                        "PRÊT"
+                        if accepted
+                        else "..."
+                    )
+
+
+                    player_lines.append(
+                        f"{player['name']} : {status}"
+                    )
+
+
+                y = 360
+
+
+                for line in player_lines:
+
+                    line_text = (
+                        self.small_font.render(
+                            line,
+                            True,
+                            "#d8dce6"
                         )
                     )
+
+                    screen.blit(
+                        line_text,
+                        line_text.get_rect(
+                            center=(
+                                x,
+                                y
+                            )
+                        )
+                    )
+
+                    y += 27
+
+
+                # =============================================
+                # BOUTON REJOUER
+                # =============================================
+
+                already_voted = (
+                    state["your_id"]
+                    in replay_votes
                 )
+
+
+                if already_voted:
+
+                    replay_color = (
+                        "#365e54"
+                    )
+
+                    replay_text = (
+                        "EN ATTENTE..."
+                    )
+
+                else:
+
+                    replay_hover = (
+                        self.replay_rect
+                        .collidepoint(
+                            mouse_pos
+                        )
+                    )
+
+                    replay_color = (
+                        "#39755e"
+                        if not replay_hover
+                        else "#4c9679"
+                    )
+
+                    replay_text = (
+                        "REJOUER"
+                    )
+
+
+                pygame.draw.rect(
+                    screen,
+                    replay_color,
+                    self.replay_rect,
+                    border_radius=10
+                )
+
+
+                replay_render = (
+                    self.font.render(
+                        replay_text,
+                        True,
+                        "white"
+                    )
+                )
+
+
+                screen.blit(
+                    replay_render,
+                    replay_render.get_rect(
+                        center=
+                            self.replay_rect.center
+                    )
+                )
+
+
+                # =============================================
+                # RETOUR LOBBY
+                # =============================================
+
+                lobby_hover = (
+                    self.lobby_rect
+                    .collidepoint(
+                        mouse_pos
+                    )
+                )
+
+
+                lobby_color = (
+                    "#373e52"
+                    if not lobby_hover
+                    else "#4a546d"
+                )
+
+
+                pygame.draw.rect(
+                    screen,
+                    lobby_color,
+                    self.lobby_rect,
+                    border_radius=10
+                )
+
+
+                lobby_render = (
+                    self.font.render(
+                        "RETOUR AU LOBBY",
+                        True,
+                        "white"
+                    )
+                )
+
+
+                screen.blit(
+                    lobby_render,
+                    lobby_render.get_rect(
+                        center=
+                            self.lobby_rect.center
+                    )
+                )
+
+
+                return
+
+
+                
+
+               
+                
 
                 return
             if (

@@ -162,6 +162,161 @@ async def handle_client(
             # -------------------------
             # CREATE ROOM
             # -------------------------
+            elif message_type == "uno_return_lobby":
+
+                room = rooms.get_player_room(
+                    player_id
+                )
+
+                if room is None:
+                    continue
+
+
+                uno_game = uno_games.get(
+                    room.code
+                )
+
+                if uno_game is None:
+                    continue
+
+
+                # On autorise seulement après
+                # la fin de partie
+                if uno_game.winner_id is None:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message":
+                                "La partie n'est pas terminée."
+                        }
+                    )
+
+                    continue
+
+
+                uno_games.pop(
+                    room.code,
+                    None
+                )
+
+
+                print(
+                    f"[UNO] Retour lobby {room.code}"
+                )
+
+
+                for target_id in room.players:
+
+                    target_socket = clients.get(
+                        target_id
+                    )
+
+                    if target_socket is None:
+                        continue
+
+
+                    await send_json(
+                        target_socket,
+                        {
+                            "type": "game_ended",
+                            "game": "uno"
+                        }
+                    )
+            elif message_type == "uno_replay_vote":
+
+                room = rooms.get_player_room(
+                    player_id
+                )
+
+                if room is None:
+                    continue
+
+
+                uno_game = uno_games.get(
+                    room.code
+                )
+
+                if uno_game is None:
+                    continue
+
+
+                try:
+
+                    uno_game.vote_replay(
+                        player_id
+                    )
+
+                except ValueError as error:
+
+                    await send_json(
+                        websocket,
+                        {
+                            "type": "error",
+                            "message": str(
+                                error
+                            )
+                        }
+                    )
+
+                    continue
+
+
+                # ---------------------------------
+                # LES DEUX VEULENT REJOUER
+                # ---------------------------------
+
+                if uno_game.everyone_wants_replay():
+
+                    print(
+                        f"[UNO] Replay dans {room.code}"
+                    )
+
+
+                    new_game = UnoRoom(
+                        room
+                    )
+
+
+                    uno_games[
+                        room.code
+                    ] = new_game
+
+
+                    # On dit aux clients
+                    # qu'une nouvelle partie commence
+                    for target_id in room.players:
+
+                        target_socket = clients.get(
+                            target_id
+                        )
+
+                        if target_socket is None:
+                            continue
+
+
+                        await send_json(
+                            target_socket,
+                            {
+                                "type": "uno_restarted"
+                            }
+                        )
+
+
+                    await broadcast_uno_state(
+                        room,
+                        new_game
+                    )
+
+
+                else:
+
+                    # Actualise juste les votes
+                    await broadcast_uno_state(
+                        room,
+                        uno_game
+                    )
             elif message_type == "start_uno":
 
                 room = rooms.get_player_room(

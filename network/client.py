@@ -380,6 +380,22 @@ class NetworkClient:
                     )
                 elif (
                     message_type
+                    == "uno_restarted"
+                ):
+                
+                    self.game = "uno"
+                
+                    self.last_error = None
+                elif (
+                    message_type
+                    == "game_ended"
+                ):
+
+                    self.game = None
+
+                    self.uno_state = None
+                elif (
+                    message_type
                     == "room_left"
                 ):
 
@@ -400,6 +416,7 @@ class NetworkClient:
                 events.append(
                     message
                 )
+                
                 
         return events
 
@@ -460,5 +477,25 @@ class NetworkClient:
         self.send(
             {
                 "type": "uno_draw_card"
+            }
+        )
+    def uno_replay_vote(self):
+
+        self.last_error = None
+
+        self.send(
+            {
+                "type": "uno_replay_vote"
+            }
+        )
+
+
+    def uno_return_lobby(self):
+
+        self.last_error = None
+
+        self.send(
+            {
+                "type": "uno_return_lobby"
             }
         )

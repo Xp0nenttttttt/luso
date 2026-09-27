@@ -18,7 +18,7 @@ class UnoRoom:
     ):
 
         self.room_code = room.code
-
+        self.replay_votes = set()
         self.player_ids = list(
             room.players.keys()
         )
@@ -468,7 +468,8 @@ class UnoRoom:
                             other_id,
                             []
                         )
-                    )
+                    ),
+                    
                 }
             )
 
@@ -525,5 +526,50 @@ class UnoRoom:
                 self.get_current_player_id(),
 
             "winner_id":
-                self.winner_id
+                self.winner_id,
+            "replay_votes": list(
+                self.replay_votes
+            ),
+            
+            "replay_required": len(
+                self.player_ids
+            ),
         }
+    # =================================================
+    # REPLAY
+    # =================================================
+
+    def vote_replay(
+        self,
+        player_id
+    ):
+        if self.winner_id is None:
+            raise ValueError(
+                "La partie n'est pas terminée."
+            )
+
+        if player_id not in self.player_ids:
+            raise ValueError(
+                "Joueur invalide."
+            )
+
+        self.replay_votes.add(
+            player_id
+        )
+
+
+    def wants_replay(
+        self,
+        player_id
+    ):
+        return (
+            player_id
+            in self.replay_votes
+        )
+
+
+    def everyone_wants_replay(self):
+        return (
+            len(self.replay_votes)
+            == len(self.player_ids)
+        )

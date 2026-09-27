@@ -221,7 +221,18 @@ while running:
     network_events = network_client.update()
 
     for network_event in network_events:
+        if (
+            network_event.get("type")
+            == "game_ended"
+        ):
 
+            state = "multiplayer"
+        if (
+            network_event.get("type")
+            == "uno_restarted"
+        ):
+
+            state = "uno_online"
         if (
             network_event.get("type")
             == "game_started"
