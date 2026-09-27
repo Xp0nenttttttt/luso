@@ -1090,47 +1090,6 @@ class UnoOnline:
         rect,
         active=False
     ):
-        avatar_center = (
-            rect.x + 38,
-            rect.centery
-        )
-
-        avatar = self.get_avatar(
-            character
-        )
-
-
-        if avatar is not None:
-
-            avatar_rect = avatar.get_rect(
-                center=avatar_center
-            )
-
-            screen.blit(
-                avatar,
-                avatar_rect
-            )
-
-            pygame.draw.circle(
-                screen,
-                (
-                    self.theme["accent"]
-                    if active
-                    else "#7586a5"
-                ),
-                avatar_center,
-                28,
-                2
-            )
-
-        else:
-
-            pygame.draw.circle(
-                screen,
-                "#3c4860",
-                avatar_center,
-                25
-            )
         color = (
             "#21384a"
             if active
@@ -1158,26 +1117,37 @@ class UnoOnline:
             border_radius=12
         )
 
-        # Avatar temporaire
         avatar_center = (
-            rect.x + 33,
+            rect.x + 38,
             rect.centery
         )
-
-        pygame.draw.circle(
-            screen,
-            "#3c4860",
-            avatar_center,
-            22
+        avatar = self.get_avatar(
+            character
         )
 
-        pygame.draw.circle(
-            screen,
-            "#7586a5",
-            avatar_center,
-            22,
-            2
-        )
+        if avatar is not None:
+            avatar_rect = avatar.get_rect(
+                center=avatar_center
+            )
+            screen.blit(
+                avatar,
+                avatar_rect
+            )
+            pygame.draw.circle(
+                screen,
+                self.theme["accent"] if active else "#7586a5",
+                avatar_center,
+                28,
+                2
+            )
+        else:
+            pygame.draw.circle(
+                screen,
+                "#3c4860",
+                avatar_center,
+                25
+            )
+
 
         name_text = self.font.render(
             name,
@@ -1642,6 +1612,15 @@ class UnoOnline:
         self,
         character
     ):
+        character = str(
+            character or "lucie"
+        )
+
+        if (
+            Path(character).name != character
+            or character in (".", "..")
+        ):
+            character = "lucie"
 
         if character in self.avatar_cache:
 
@@ -1654,11 +1633,20 @@ class UnoOnline:
             Path("assets")
             / "characters"
             / character
-            / "profile_icon.png"
+            / "pfp.png"
         )
 
 
-        if not path.exists():
+        if not path.is_file():
+
+            path = (
+                Path("assets")
+                / "characters"
+                / "lucie"
+                / "pfp.png"
+            )
+
+        if not path.is_file():
 
             self.avatar_cache[
                 character
