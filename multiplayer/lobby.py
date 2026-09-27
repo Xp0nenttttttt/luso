@@ -539,16 +539,6 @@ class MultiplayerLobby:
                     )
                 )
 
-            screen.blit(
-                coming,
-                coming.get_rect(
-                    center=(
-                        640,
-                        550
-                    )
-                )
-            )
-
         # -------------------------
         # ERREUR
         # -------------------------
