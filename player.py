@@ -1,21 +1,16 @@
 import pygame
 from asset_paths import asset_path
-from pathlib import Path
 
 from characters import CHARACTERS
 
 class Player:
-    def __init__(self, x=640, y=360,character_id="lucie"):
+    def __init__(self, x=640, y=360, character_id="pink_girl"):
         # -----------------------------
         # POSITION
         # -----------------------------
         self.x = float(x)
         self.y = float(y)
         self.character_id = None
-
-        self.set_character(
-            character_id
-        )
         # -----------------------------
         # DEPLACEMENT
         # -----------------------------
@@ -48,7 +43,7 @@ class Player:
             "run": {}
         }
 
-        self.load_animations()
+        self.set_character(character_id)
 
     # --------------------------------
     # CHARGER UNE SPRITE SHEET
@@ -193,7 +188,7 @@ class Player:
         base_path = asset_path(
             "assets",
             "characters",
-            "lucie"
+            CHARACTERS[self.character_id]["folder"]
         )
 
         idle_sheet = self.load_sheet(
@@ -355,33 +350,11 @@ class Player:
         character_id
     ):
         if character_id not in CHARACTERS:
-            character_id = "lucie"
+            character_id = "pink_girl"
 
         self.character_id = character_id
 
-        folder = CHARACTERS[
-            character_id
-        ]["folder"]
-
-        base = (
-            Path("assets")
-            / "characters"
-            / folder
-        )
-
-        self.animations = {
-            "idle": self.load_sheet(
-                base / "idle_aligned.png"
-            ),
-
-            "walk": self.load_sheet(
-                base / "walk_aligned.png"
-            ),
-
-            "run": self.load_sheet(
-                base / "run_aligned.png"
-            )
-        }
+        self.load_animations()
 
         self.frame_index = 0
-        self.frame_timer = 0
+        self.animation_timer = 0

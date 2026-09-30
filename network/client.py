@@ -338,6 +338,9 @@ class NetworkClient:
                     "_local"
                 )
             )
+            message_type = message.get(
+                "type"
+            )
 
             if (
                 local_type
@@ -384,12 +387,6 @@ class NetworkClient:
                 )
 
             else:
-
-                message_type = (
-                    message.get(
-                        "type"
-                    )
-                )
 
                 if (
                     message_type

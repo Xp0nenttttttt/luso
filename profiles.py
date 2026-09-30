@@ -10,7 +10,6 @@ profile_path = asset_path("assets", "profile")
 class Profile:
     def __init__(self, stats, progression):
         self.character_buttons = []
-        self.load_character_assets()
         self.character_changed = None
         self.badge_catalog = {
             "level": {
@@ -124,54 +123,6 @@ class Profile:
             180,
             50
         )
-        # -----------------------------
-        # ASSETS PROFIL
-        # -----------------------------
-
-        self.profile_icon = pygame.image.load(
-            asset_path(
-                "assets",
-                "characters",
-                "lucie",
-                "pfp.png"
-            )
-        ).convert_alpha()
-
-        self.profile_icon = pygame.transform.scale(
-            self.profile_icon,
-            (140, 140)
-        )
-
-
-        # -----------------------------
-        # PERSONNAGE PREVIEW
-        # -----------------------------
-
-        idle_sheet = pygame.image.load(
-            asset_path(
-                "assets",
-                "characters",
-                "lucie",
-                "idle.png"
-            )
-        ).convert_alpha()
-
-        FRAME_SIZE = 340
-
-        # Première frame, direction DOWN
-        character_frame = idle_sheet.subsurface(
-            pygame.Rect(
-                0,
-                0,
-                FRAME_SIZE,
-                FRAME_SIZE
-            )
-        ).copy()
-
-        self.character_preview = pygame.transform.scale(
-            character_frame,
-            (180, 180)
-        )
         self.editing = False
 
         self.edit_field = None
@@ -225,7 +176,7 @@ class Profile:
 
             # Plus tard ça correspondra
             # au vrai sprite du personnage
-            "character": "default",
+            "character": "pink_girl",
             # Objets équipés
             "title": "default",
             "banner": "default",
@@ -237,6 +188,11 @@ class Profile:
                 key,
                 value
             )
+
+        if self.profile_data["character"] not in CHARACTERS:
+            self.profile_data["character"] = "pink_girl"
+
+        self.load_character_assets()
 
         self.banner = self.get_banner()
 
@@ -361,7 +317,7 @@ class Profile:
 
         current = self.profile_data.get(
             "character",
-            "lucie"
+            "pink_girl"
         )
 
         x = 90
@@ -421,7 +377,7 @@ class Profile:
                 Path("assets")
                 / "characters"
                 / data["folder"]
-                / "profile_icon.png"
+                / "pres.png"
             )
 
             try:
@@ -3807,7 +3763,7 @@ class Profile:
 
         character = CHARACTERS.get(
             character_id,
-            CHARACTERS["lucie"]
+            CHARACTERS["pink_girl"]
         )
 
         folder = character[
@@ -3823,7 +3779,7 @@ class Profile:
             Path("assets")
             / "characters"
             / folder
-            / "profile_icon.png"
+            / "pres.png"
         )
 
         try:
@@ -3857,7 +3813,7 @@ class Profile:
             Path("assets")
             / "characters"
             / folder
-            / "idle_aligned.png"
+            / "idle.png"
         )
 
         try:

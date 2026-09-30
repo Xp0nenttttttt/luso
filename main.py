@@ -81,7 +81,7 @@ character_id = (
     .get("profile", {})
     .get(
         "character",
-        "lucie"
+        "pink_girl"
     )
 )
 
