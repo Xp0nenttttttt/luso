@@ -47,7 +47,7 @@ class Player:
     # --------------------------------
     # CHARGER UNE SPRITE SHEET
     # --------------------------------
-
+    
     def load_sheet(self, path, rows=4, cols=4):
 
         sheet = pygame.image.load(

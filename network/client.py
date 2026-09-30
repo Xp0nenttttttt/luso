@@ -16,7 +16,7 @@ class NetworkClient:
         player_character="lucie"
     ):
         self.game = None
-
+        self.hub_players = {}
         self.uno_state = None
         self.url = url
 
@@ -51,7 +51,52 @@ class NetworkClient:
     # ---------------------------------
     # START
     # ---------------------------------
+    def enter_hub(
+        self,
+        x,
+        y
+    ):
 
+        self.send(
+            {
+                "type": "hub_enter",
+                "x": x,
+                "y": y
+            }
+        )
+
+
+    def leave_hub(self):
+
+        self.send(
+            {
+                "type": "hub_leave"
+            }
+        )
+
+        self.hub_players = {}
+
+
+    def send_hub_position(
+        self,
+        x,
+        y,
+        direction,
+        movement_state
+    ):
+
+        self.send(
+            {
+                "type": "hub_move",
+
+                "x": x,
+                "y": y,
+
+                "direction": direction,
+
+                "state": movement_state
+            }
+        )
     def start(self):
 
         if self._running:
@@ -311,7 +356,20 @@ class NetworkClient:
                 self.connected = False
 
                 self.room = None
+            elif (
+                message_type
+                == "hub_state"
+            ):
 
+                players = message.get(
+                    "players",
+                    []
+                )
+
+                self.hub_players = {
+                    player["id"]: player
+                    for player in players
+                }
             elif (
                 local_type
                 == "connection_error"

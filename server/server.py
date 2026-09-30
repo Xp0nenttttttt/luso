@@ -22,10 +22,85 @@ clients = {}
 
 player_names = {}
 player_characters = {}
-
+hub_players = {}
 # ---------------------------------
 # ENVOI JSON
 # ---------------------------------
+async def broadcast_hub_state():
+
+    players = []
+
+    for player_id, data in hub_players.items():
+
+        players.append(
+            {
+                "id": player_id,
+
+                "name": player_names.get(
+                    player_id,
+                    "Player"
+                ),
+
+                "character": player_characters.get(
+                    player_id,
+                    "lucie"
+                ),
+
+                "x": data["x"],
+                "y": data["y"],
+
+                "direction": data[
+                    "direction"
+                ],
+
+                "state": data[
+                    "state"
+                ]
+            }
+        )
+
+
+    message = json.dumps(
+        {
+            "type": "hub_state",
+            "players": players
+        }
+    )
+
+
+    disconnected = []
+
+
+    for player_id in list(
+        hub_players.keys()
+    ):
+
+        websocket = clients.get(
+            player_id
+        )
+
+        if websocket is None:
+            continue
+
+        try:
+
+            await websocket.send(
+                message
+            )
+
+        except Exception:
+
+            disconnected.append(
+                player_id
+            )
+
+
+    for player_id in disconnected:
+
+        hub_players.pop(
+            player_id,
+            None
+        )
 
 async def send_json(
     websocket,
@@ -175,9 +250,165 @@ async def handle_client(
                 print(
                     f"{player_id} = {name}"
                 )
+            elif message_type == "hub_leave":
 
+                hub_players.pop(
+                    player_id,
+                    None
+                )
+
+                await broadcast_hub_state()
+            elif message_type == "hub_move":
+
+                player = hub_players.get(
+                    player_id
+                )
+
+                if player is None:
+                    continue
+
+
+                try:
+
+                    x = float(
+                        data.get(
+                            "x",
+                            player["x"]
+                        )
+                    )
+
+                    y = float(
+                        data.get(
+                            "y",
+                            player["y"]
+                        )
+                    )
+
+                except (
+                    TypeError,
+                    ValueError
+                ):
+
+                    continue
+
+
+                direction = data.get(
+                    "direction",
+                    "down"
+                )
+
+                movement_state = data.get(
+                    "state",
+                    "idle"
+                )
+
+
+                if direction not in [
+                    "up",
+                    "down",
+                    "left",
+                    "right"
+                ]:
+
+                    direction = "down"
+
+
+                if movement_state not in [
+                    "idle",
+                    "walk",
+                    "run"
+                ]:
+
+                    movement_state = "idle"
+
+
+                player["x"] = max(
+                    0,
+                    min(
+                        1280,
+                        x
+                    )
+                )
+
+                player["y"] = max(
+                    0,
+                    min(
+                        720,
+                        y
+                    )
+                )
+
+                player["direction"] = (
+                    direction
+                )
+
+                player["state"] = (
+                    movement_state
+                )
+
+
+                await broadcast_hub_state()
+            elif message_type == "hub_enter":
+
+                try:
+
+                    x = float(
+                        data.get(
+                            "x",
+                            640
+                        )
+                    )
+
+                    y = float(
+                        data.get(
+                            "y",
+                            360
+                        )
+                    )
+
+                except (
+                    TypeError,
+                    ValueError
+                ):
+
+                    x = 640
+                    y = 360
+
+
+                hub_players[
+                    player_id
+                ] = {
+                    "x": max(
+                        0,
+                        min(
+                            1280,
+                            x
+                        )
+                    ),
+
+                    "y": max(
+                        0,
+                        min(
+                            720,
+                            y
+                        )
+                    ),
+
+                    "direction": "down",
+
+                    "state": "idle"
+                }
+
+
+                print(
+                    f"[HUB] {player_names[player_id]} entre dans le hub"
+                )
+
+
+                await broadcast_hub_state()
             # -------------------------
             # CREATE ROOM
+            
             # -------------------------
             elif message_type == "uno_return_lobby":
 
@@ -709,7 +940,10 @@ async def handle_client(
         rooms.leave_room(
             player_id
         )
-
+        hub_players.pop(
+            player_id,
+            None
+        )
         clients.pop(
             player_id,
             None
@@ -730,7 +964,7 @@ async def handle_client(
         await broadcast_room(
             room
         )
-
+        await broadcast_hub_state()
 
 # ---------------------------------
 # MAIN

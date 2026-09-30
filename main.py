@@ -20,7 +20,7 @@ try:
 except ImportError:
 
     ADMIN_AVAILABLE = False
-
+from multiplayer.hub_multiplayer import HubMultiplayer
 from network.client import NetworkClient
 from network.config import SERVER_URL
 from games.uno.uno_online import UnoOnline
@@ -69,7 +69,9 @@ font = pygame.font.Font(
     40
 )
 
+hub_network_timer = 0.0
 
+HUB_NETWORK_RATE = 0.10
 # --------------------------------
 # OBJETS
 # --------------------------------
@@ -147,7 +149,9 @@ network_client = NetworkClient(
 )
 
 network_client.start()
-
+hub_multiplayer = HubMultiplayer(
+    network_client
+)
 uno_online = UnoOnline(
     network_client
 )
@@ -159,7 +163,44 @@ multiplayer_lobby = (
 # --------------------------------
 # POSITION SOURIS
 # --------------------------------
+def get_player_network_data(
+    player
+):
 
+    if hasattr(
+        player,
+        "x"
+    ):
+
+        x = player.x
+        y = player.y
+
+    else:
+
+        x = player.position.x
+        y = player.position.y
+
+
+    direction = getattr(
+        player,
+        "direction",
+        "down"
+    )
+
+
+    movement_state = getattr(
+        player,
+        "state",
+        "idle"
+    )
+
+
+    return (
+        x,
+        y,
+        direction,
+        movement_state
+    )
 def get_game_mouse_pos():
 
     mouse_x, mouse_y = (
@@ -315,7 +356,31 @@ while running:
         # --------------------------------
         # MAIN MENU
         # --------------------------------
+        if state == "hub":
+            hub_multiplayer.update(
+                dt
+            )
+            hub_network_timer += dt
 
+            if (
+                hub_network_timer
+                >= HUB_NETWORK_RATE
+            ):
+
+                hub_network_timer = 0.0
+                x, y, direction, movement_state = (
+                    get_player_network_data(
+                        player
+                    )
+                )
+
+
+                network_client.send_hub_position(
+                    x,
+                    y,
+                    direction,
+                    movement_state
+                )
         if state == "main_menu":
 
             action = (
@@ -332,6 +397,16 @@ while running:
 
                 state = "hub"
 
+                x, y, _, _ = (
+                    get_player_network_data(
+                        player
+                    )
+                )
+
+                network_client.enter_hub(
+                    x,
+                    y
+                )
                 
 
             elif action == "profile":
@@ -366,7 +441,7 @@ while running:
             )
 
             if result == "back":
-
+                network_client.leave_hub()
                 state = "multiplayer"
         elif state == "uno":
         
@@ -427,7 +502,7 @@ while running:
             )
 
             if result == "back":
-
+                network_client.leave_hub()
                 state = "main_menu"
         elif state == "profile":
 
@@ -517,7 +592,7 @@ while running:
                 # on retourne au menu principal
 
                 elif state == "hub":
-
+                    network_client.leave_hub()
                     state = "main_menu"
 
 
@@ -572,7 +647,12 @@ while running:
         hub.draw(
             game_surface
         )
-
+        hub_multiplayer.draw(
+            game_surface
+        )
+        player.draw(
+            game_surface
+        )
 
     elif state == "profile":
 
