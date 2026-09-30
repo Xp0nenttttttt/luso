@@ -9,6 +9,19 @@ profile_path = asset_path("assets", "profile")
 
 class Profile:
     def __init__(self, stats, progression):
+        self.character_selector_open = False
+        self.character_cards = []
+
+        self.character_changed = None
+
+        self.character_icon_cache = {}
+
+        self.change_character_rect = pygame.Rect(
+            950,
+            185,
+            210,
+            45
+        )
         self.character_buttons = []
         self.character_changed = None
         self.badge_catalog = {
@@ -95,6 +108,7 @@ class Profile:
             "muted": "#9399aa",
 
             "online": "#57d68d",
+            "success": "#57d68d",
             "warning": "#f5c45f"
         }
         self.stats = stats
@@ -509,6 +523,48 @@ class Profile:
             mouse_pos[0],
             mouse_pos[1] + self.scroll_y
         )
+        if (
+            not self.character_selector_open
+            and event.type == pygame.MOUSEBUTTONDOWN
+            and event.button == 1
+            and self.change_character_rect.collidepoint(
+                mouse_pos
+            )
+        ):
+            self.character_selector_open = True
+            return
+
+        if self.character_selector_open:
+
+            if event.type == pygame.KEYDOWN:
+
+                if event.key == pygame.K_ESCAPE:
+
+                    self.character_selector_open = False
+
+                    return
+
+
+            if (
+                event.type
+                == pygame.MOUSEBUTTONDOWN
+                and event.button == 1
+            ):
+                for card in self.character_cards:
+
+                    if card[
+                        "rect"
+                    ].collidepoint(
+                        mouse_pos
+                    ):
+
+                        self.equip_character(
+                            card["id"]
+                        )
+
+                        return
+
+            return
         if event.type == pygame.MOUSEWHEEL:
 
             if not self.editing:
@@ -1126,6 +1182,47 @@ class Profile:
             )
 
             return
+        hovered = (
+            self.change_character_rect
+            .collidepoint(
+                mouse_pos
+            )
+        )
+
+        button_color = (
+            "#333b50"
+            if not hovered
+            else "#46526e"
+        )
+
+        pygame.draw.rect(
+            screen,
+            button_color,
+            self.change_character_rect,
+            border_radius=8
+        )
+
+        pygame.draw.rect(
+            screen,
+            self.theme["border"],
+            self.change_character_rect,
+            2,
+            border_radius=8
+        )
+
+        text = self.small_font.render(
+            "Changer de personnage",
+            True,
+            self.theme["text"]
+        )
+
+        screen.blit(
+            text,
+            text.get_rect(
+                center=
+                    self.change_character_rect.center
+            )
+        )
         # -----------------------------
         # SURFACE SCROLLABLE
         # -----------------------------
@@ -1157,7 +1254,12 @@ class Profile:
         # -----------------------------
         # CONTENU
         # -----------------------------
+        if self.character_selector_open:
 
+            self.draw_character_selector(
+                screen,
+                mouse_pos
+            )
         if self.current_tab == "overview":
 
             self.draw_overview(
@@ -3881,3 +3983,345 @@ class Profile:
         ):
 
             self.banner = None
+    def get_character_icon(
+        self,
+        character_id
+    ):
+
+        if character_id in self.character_icon_cache:
+            return self.character_icon_cache[
+                character_id
+            ]
+
+        data = CHARACTERS.get(
+            character_id
+        )
+
+        if data is None:
+            return None
+
+        path = (
+            Path("assets")
+            / "characters"
+            / data["folder"]
+            / "profile_icon.png"
+        )
+
+        try:
+
+            image = pygame.image.load(
+                path
+            ).convert_alpha()
+
+            image = pygame.transform.smoothscale(
+                image,
+                (120, 120)
+            )
+
+        except (
+            pygame.error,
+            FileNotFoundError
+        ):
+
+            image = None
+
+        self.character_icon_cache[
+            character_id
+        ] = image
+
+        return image
+    def equip_character(
+        self,
+        character_id
+    ):
+
+        if character_id not in CHARACTERS:
+            return
+
+        current = self.profile_data.get(
+            "character",
+            "pink_girl"
+        )
+
+        if current == character_id:
+            return
+
+        self.profile_data[
+            "character"
+        ] = character_id
+
+        self.stats.save()
+
+        # Recharge :
+        # avatar
+        # preview
+        # bannière
+        self.load_character_assets()
+
+        # Main.py récupérera cette valeur
+        self.character_changed = (
+            character_id
+        )
+
+        self.character_selector_open = False
+    def draw_character_selector(
+        self,
+        screen,
+        mouse_pos
+    ):
+
+        # =====================================
+        # OVERLAY
+        # =====================================
+
+        overlay = pygame.Surface(
+            (1280, 720),
+            pygame.SRCALPHA
+        )
+
+        overlay.fill(
+            (0, 0, 0, 190)
+        )
+
+        screen.blit(
+            overlay,
+            (0, 0)
+        )
+
+
+        # =====================================
+        # PANEL
+        # =====================================
+
+        panel = pygame.Rect(
+            120,
+            80,
+            1040,
+            560
+        )
+
+        pygame.draw.rect(
+            screen,
+            "#121722",
+            panel,
+            border_radius=16
+        )
+
+        pygame.draw.rect(
+            screen,
+            "#39445c",
+            panel,
+            2,
+            border_radius=16
+        )
+
+
+        title = self.title_font.render(
+            "CHOISIR UN PERSONNAGE",
+            True,
+            "white"
+        )
+
+        screen.blit(
+            title,
+            (
+                panel.x + 35,
+                panel.y + 25
+            )
+        )
+
+
+        hint = self.small_font.render(
+            "ESC pour fermer",
+            True,
+            "#8f98aa"
+        )
+
+        screen.blit(
+            hint,
+            (
+                panel.right
+                - hint.get_width()
+                - 35,
+
+                panel.y + 42
+            )
+        )
+
+
+        # =====================================
+        # PERSONNAGES
+        # =====================================
+
+        self.character_cards = []
+
+        current_character = (
+            self.profile_data.get(
+                "character",
+                "pink_girl"
+            )
+        )
+
+        columns = 4
+
+        card_width = 210
+        card_height = 190
+
+        spacing_x = 235
+        spacing_y = 215
+
+        start_x = panel.x + 45
+        start_y = panel.y + 100
+
+
+        for index, (
+            character_id,
+            data
+        ) in enumerate(
+            CHARACTERS.items()
+        ):
+
+            column = index % columns
+            row = index // columns
+
+            rect = pygame.Rect(
+                start_x
+                + column * spacing_x,
+
+                start_y
+                + row * spacing_y,
+
+                card_width,
+                card_height
+            )
+
+            hovered = rect.collidepoint(
+                mouse_pos
+            )
+
+            equipped = (
+                current_character
+                == character_id
+            )
+
+
+            if equipped:
+
+                background = "#263b48"
+
+            elif hovered:
+
+                background = "#252d40"
+
+            else:
+
+                background = "#1a202d"
+
+
+            pygame.draw.rect(
+                screen,
+                background,
+                rect,
+                border_radius=12
+            )
+
+
+            border = (
+                self.theme["accent"]
+                if equipped
+                else "#38435a"
+            )
+
+            pygame.draw.rect(
+                screen,
+                border,
+                rect,
+                3 if equipped else 2,
+                border_radius=12
+            )
+
+
+            # =============================
+            # ICON
+            # =============================
+
+            icon = self.get_character_icon(
+                character_id
+            )
+
+            if icon is not None:
+
+                icon_rect = icon.get_rect(
+                    center=(
+                        rect.centerx,
+                        rect.y + 70
+                    )
+                )
+
+                screen.blit(
+                    icon,
+                    icon_rect
+                )
+
+
+            # =============================
+            # NAME
+            # =============================
+
+            name = self.font.render(
+                data["name"],
+                True,
+                "white"
+            )
+
+            screen.blit(
+                name,
+                name.get_rect(
+                    center=(
+                        rect.centerx,
+                        rect.y + 145
+                    )
+                )
+            )
+
+
+            # =============================
+            # STATE
+            # =============================
+
+            if equipped:
+
+                label = "ÉQUIPÉ"
+                label_color = "#62e6a2"
+
+            else:
+
+                label = "ÉQUIPER"
+                label_color = "#9aa4b8"
+
+
+            label_render = (
+                self.small_font.render(
+                    label,
+                    True,
+                    label_color
+                )
+            )
+
+            screen.blit(
+                label_render,
+                label_render.get_rect(
+                    center=(
+                        rect.centerx,
+                        rect.y + 172
+                    )
+                )
+            )
+
+
+            self.character_cards.append(
+                {
+                    "rect": rect,
+                    "id": character_id
+                }
+            )

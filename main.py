@@ -648,7 +648,7 @@ while running:
         network_client.update_character(
             new_character
         )
-
+        
         profile.character_changed = None
     # --------------------------------
     # DRAW

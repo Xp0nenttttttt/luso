@@ -10,11 +10,21 @@ CHARACTERS = {
         "folder": "sophie",
         "banner": "sophie.png"
     },
-    "sophienb": {
-            "name": "Sophienb",
-            "folder": "sophienb",
-            "banner": "sophienb.png"
+    "gothic": {
+            "name": "Gothic",
+            "folder": "gothic",
+            "banner": "gothic.png"
         },
+    "Fox": {
+                "name": "Fox",
+                "folder": "fox",
+                "banner": "fox.png"
+            },
+    "lincey": {
+                "name": "Lincey",
+                "folder": "lincey",
+                "banner": "lincey.png"
+            },
 
     # Plus tard
     "white_angel": {

@@ -176,12 +176,56 @@ def process(input_path: Path, output_path: Path, frames_dir: Path | None,
         save_individual_frames(frames, frames_dir)
 
 
+def choose_paths(input_path: Path | None, output_path: Path | None):
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except ImportError as error:
+        raise SystemExit(
+            "Tkinter est nécessaire pour choisir les fichiers sans arguments."
+        ) from error
+
+    root = tk.Tk()
+    root.withdraw()
+    try:
+        if input_path is None:
+            selected_input = filedialog.askopenfilename(
+                parent=root,
+                title="Choisir une spritesheet",
+                filetypes=[("Images PNG", "*.png"), ("Tous les fichiers", "*.*")],
+            )
+            if not selected_input:
+                return None, None
+            input_path = Path(selected_input)
+
+        if output_path is None:
+            default_output = input_path.with_name(
+                f"{input_path.stem}_aligned.png"
+            )
+            selected_output = filedialog.asksaveasfilename(
+                parent=root,
+                title="Enregistrer la spritesheet alignée",
+                initialdir=str(input_path.parent),
+                initialfile=default_output.name,
+                defaultextension=".png",
+                filetypes=[("Images PNG", "*.png")],
+            )
+            if not selected_output:
+                return None, None
+            output_path = Path(selected_output)
+    finally:
+        root.destroy()
+
+    return input_path, output_path
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract, crop and align a transparent RPG spritesheet."
+        description="Extract, crop and align a transparent RPG spritesheet.",
+        epilog="Sans chemins, des fenêtres permettent de choisir les fichiers.",
     )
-    parser.add_argument("input", type=Path, help="Input PNG spritesheet")
-    parser.add_argument("output", type=Path, help="Aligned output PNG")
+    parser.add_argument("input", type=Path, nargs="?", help="Input PNG spritesheet")
+    parser.add_argument("output", type=Path, nargs="?", help="Aligned output PNG")
     parser.add_argument("--frames-dir", type=Path, default=None,
                         help="Optional folder for individual frames")
     parser.add_argument("--rows", type=int, default=4)
@@ -192,9 +236,28 @@ def main():
     parser.add_argument("--alpha-threshold", type=int, default=24)
     args = parser.parse_args()
 
+    input_path = args.input
+    output_path = args.output
+    if input_path is not None and output_path is None:
+        output_path = input_path.with_name(
+            f"{input_path.stem}_aligned.png"
+        )
+    else:
+        input_path, output_path = choose_paths(
+            input_path,
+            output_path,
+        )
+
+    if input_path is None or output_path is None:
+        print("Opération annulée.")
+        return
+
+    if not input_path.is_file():
+        parser.error(f"Fichier introuvable : {input_path}")
+
     process(
-        args.input,
-        args.output,
+        input_path,
+        output_path,
         args.frames_dir,
         args.rows,
         args.cols,
@@ -203,9 +266,9 @@ def main():
         args.alpha_threshold,
     )
 
-    print(f"Aligned sheet: {args.output}")
+    print(f"Spritesheet alignée : {output_path}")
     if args.frames_dir:
-        print(f"Individual frames: {args.frames_dir}")
+        print(f"Images séparées : {args.frames_dir}")
 
 
 if __name__ == "__main__":
