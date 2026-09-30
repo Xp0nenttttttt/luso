@@ -560,3 +560,21 @@ class NetworkClient:
                 "type": "uno_return_lobby"
             }
         )
+    def update_character(
+        self,
+        character_id
+    ):
+
+        self.player_character = (
+            character_id
+        )
+
+        self.send(
+            {
+                "type":
+                    "update_character",
+
+                "character":
+                    character_id
+            }
+        )

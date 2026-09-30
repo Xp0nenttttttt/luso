@@ -250,6 +250,50 @@ async def handle_client(
                 print(
                     f"{player_id} = {name}"
                 )
+            elif message_type == "update_character":
+
+                character = str(
+                    data.get(
+                        "character",
+                        "lucie"
+                    )
+                )
+
+                player_characters[
+                    player_id
+                ] = character
+
+
+                # Si le joueur est dans une room
+                room = rooms.get_player_room(
+                    player_id
+                )
+
+                if room is not None:
+
+                    if (
+                        player_id
+                        in room.players
+                    ):
+
+                        room.players[
+                            player_id
+                        ][
+                            "character"
+                        ] = character
+
+                    await broadcast_room(
+                        room
+                    )
+
+
+                # Actualise également le hub
+                if (
+                    player_id
+                    in hub_players
+                ):
+
+                    await broadcast_hub_state()
             elif message_type == "hub_leave":
 
                 hub_players.pop(
@@ -258,6 +302,7 @@ async def handle_client(
                 )
 
                 await broadcast_hub_state()
+            
             elif message_type == "hub_move":
 
                 player = hub_players.get(

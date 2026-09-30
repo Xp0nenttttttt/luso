@@ -2,11 +2,16 @@ import pygame
 from datetime import datetime
 from pathlib import Path
 from asset_paths import asset_path
+from pathlib import Path
 
+from characters import CHARACTERS
 profile_path = asset_path("assets", "profile")
 
 class Profile:
     def __init__(self, stats, progression):
+        self.character_buttons = []
+        self.load_character_assets()
+        self.character_changed = None
         self.badge_catalog = {
             "level": {
                 "name": "Progression",
@@ -346,7 +351,175 @@ class Profile:
     # -----------------------------
     # DATE
     # -----------------------------
+    def draw_characters(
+        self,
+        screen,
+        mouse_pos,
+        start_y
+    ):
+        self.character_buttons = []
 
+        current = self.profile_data.get(
+            "character",
+            "lucie"
+        )
+
+        x = 90
+        y = start_y
+
+        for character_id, data in (
+            CHARACTERS.items()
+        ):
+
+            rect = pygame.Rect(
+                x,
+                y,
+                210,
+                250
+            )
+
+            hovered = rect.collidepoint(
+                mouse_pos
+            )
+
+            equipped = (
+                current
+                == character_id
+            )
+
+            color = (
+                "#263147"
+                if hovered
+                else self.theme["panel"]
+            )
+
+            pygame.draw.rect(
+                screen,
+                color,
+                rect,
+                border_radius=12
+            )
+
+            pygame.draw.rect(
+                screen,
+                (
+                    self.theme["accent"]
+                    if equipped
+                    else self.theme["border"]
+                ),
+                rect,
+                3 if equipped else 2,
+                border_radius=12
+            )
+
+
+            # -------------------------
+            # AVATAR
+            # -------------------------
+
+            path = (
+                Path("assets")
+                / "characters"
+                / data["folder"]
+                / "profile_icon.png"
+            )
+
+            try:
+
+                image = pygame.image.load(
+                    path
+                ).convert_alpha()
+
+                image = (
+                    pygame.transform.smoothscale(
+                        image,
+                        (130, 130)
+                    )
+                )
+
+                image_rect = (
+                    image.get_rect(
+                        center=(
+                            rect.centerx,
+                            rect.y + 90
+                        )
+                    )
+                )
+
+                screen.blit(
+                    image,
+                    image_rect
+                )
+
+            except Exception:
+                pass
+
+
+            # -------------------------
+            # NOM
+            # -------------------------
+
+            name = self.font.render(
+                data["name"],
+                True,
+                self.theme["text"]
+            )
+
+            screen.blit(
+                name,
+                name.get_rect(
+                    center=(
+                        rect.centerx,
+                        rect.y + 175
+                    )
+                )
+            )
+
+
+            label = (
+                "ÉQUIPÉ"
+                if equipped
+                else "ÉQUIPER"
+            )
+
+            label_color = (
+                self.theme["success"]
+                if equipped
+                else self.theme["muted"]
+            )
+
+            text = self.small_font.render(
+                label,
+                True,
+                label_color
+            )
+
+            screen.blit(
+                text,
+                text.get_rect(
+                    center=(
+                        rect.centerx,
+                        rect.y + 215
+                    )
+                )
+            )
+
+
+            self.character_buttons.append(
+                {
+                    "rect": rect,
+                    "character":
+                        character_id
+                }
+            )
+
+
+            x += 235
+
+            if x > 1000:
+
+                x = 90
+                y += 280
     def format_date(self, date_string):
 
         if not date_string:
@@ -509,7 +682,29 @@ class Profile:
         # -----------------------------
 
         if self.current_tab == "collection":
+            if (
+                event.type
+                == pygame.MOUSEBUTTONDOWN
+                and event.button == 1
+            ):
 
+                for button in (
+                    self.character_buttons
+                ):
+
+                    if button[
+                        "rect"
+                    ].collidepoint(
+                        content_mouse_pos
+                    ):
+
+                        self.equip_character(
+                            button[
+                                "character"
+                            ]
+                        )
+
+                        return
             for button in self.collection_buttons:
 
                 if button["rect"].collidepoint(
@@ -2279,7 +2474,11 @@ class Profile:
             True,
             "#888888"
         )
-
+        self.draw_characters(
+            screen,
+            mouse_pos,
+            350
+        )
         screen.blit(
             section,
             (90, 500)
@@ -3258,7 +3457,7 @@ class Profile:
 
         character = self.profile_data.get(
             "character",
-            "pink_girl"
+            "lucie"
         )
 
         path = (
@@ -3577,3 +3776,152 @@ class Profile:
             )
 
             return
+    def equip_character(
+        self,
+        character_id
+    ):
+        if character_id not in CHARACTERS:
+            return
+
+        self.profile_data[
+            "character"
+        ] = character_id
+
+        self.stats.save()
+
+        self.load_character_assets()
+
+        # Signale à main.py que le perso
+        # vient de changer
+        self.character_changed = (
+            character_id
+        )
+    def load_character_assets(self):
+
+        character_id = (
+            self.profile_data.get(
+                "character",
+                "lucie"
+            )
+        )
+
+        character = CHARACTERS.get(
+            character_id,
+            CHARACTERS["lucie"]
+        )
+
+        folder = character[
+            "folder"
+        ]
+
+
+        # =================================
+        # PROFILE ICON
+        # =================================
+
+        icon_path = (
+            Path("assets")
+            / "characters"
+            / folder
+            / "profile_icon.png"
+        )
+
+        try:
+
+            self.profile_icon = (
+                pygame.image.load(
+                    icon_path
+                ).convert_alpha()
+            )
+
+            self.profile_icon = (
+                pygame.transform.smoothscale(
+                    self.profile_icon,
+                    (140, 140)
+                )
+            )
+
+        except (
+            pygame.error,
+            FileNotFoundError
+        ):
+
+            self.profile_icon = None
+
+
+        # =================================
+        # CHARACTER PREVIEW
+        # =================================
+
+        idle_path = (
+            Path("assets")
+            / "characters"
+            / folder
+            / "idle_aligned.png"
+        )
+
+        try:
+
+            sheet = pygame.image.load(
+                idle_path
+            ).convert_alpha()
+
+            frame_w = (
+                sheet.get_width()
+                // 4
+            )
+
+            frame_h = (
+                sheet.get_height()
+                // 4
+            )
+
+            first_frame = sheet.subsurface(
+                pygame.Rect(
+                    0,
+                    0,
+                    frame_w,
+                    frame_h
+                )
+            ).copy()
+
+            self.character_preview = (
+                pygame.transform.smoothscale(
+                    first_frame,
+                    (180, 180)
+                )
+            )
+
+        except (
+            pygame.error,
+            FileNotFoundError
+        ):
+
+            self.character_preview = None
+
+
+        # =================================
+        # BANNER
+        # =================================
+
+        banner_path = (
+            Path("assets")
+            / "profile"
+            / "banners"
+            / character["banner"]
+        )
+
+        try:
+
+            self.banner = (
+                pygame.image.load(
+                    banner_path
+                ).convert_alpha()
+            )
+
+        except (
+            pygame.error,
+            FileNotFoundError
+        ):
+
+            self.banner = None

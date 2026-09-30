@@ -75,14 +75,28 @@ HUB_NETWORK_RATE = 0.10
 # --------------------------------
 # OBJETS
 # --------------------------------
+stats = StatsManager()
+character_id = (
+    stats.data
+    .get("profile", {})
+    .get(
+        "character",
+        "lucie"
+    )
+)
 
-player = Player(640, 360)
+player = Player(
+    640,
+    360,
+    character_id
+)
+
 
 main_menu = MainMenu()
 
 hub = Hub(player)
 
-stats = StatsManager()
+
 progression = ProgressionManager(
     stats
 )
@@ -618,7 +632,24 @@ while running:
 
         uno_game.update()
 
+    if (
+        profile.character_changed
+        is not None
+    ):
 
+        new_character = (
+            profile.character_changed
+        )
+
+        player.set_character(
+            new_character
+        )
+
+        network_client.update_character(
+            new_character
+        )
+
+        profile.character_changed = None
     # --------------------------------
     # DRAW
     # --------------------------------

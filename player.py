@@ -1,15 +1,21 @@
 import pygame
 from asset_paths import asset_path
+from pathlib import Path
 
+from characters import CHARACTERS
 
 class Player:
-    def __init__(self, x=640, y=360):
+    def __init__(self, x=640, y=360,character_id="lucie"):
         # -----------------------------
         # POSITION
         # -----------------------------
         self.x = float(x)
         self.y = float(y)
+        self.character_id = None
 
+        self.set_character(
+            character_id
+        )
         # -----------------------------
         # DEPLACEMENT
         # -----------------------------
@@ -344,3 +350,38 @@ class Player:
 
     def get_pos(self):
         return int(self.x), int(self.y)
+    def set_character(
+        self,
+        character_id
+    ):
+        if character_id not in CHARACTERS:
+            character_id = "lucie"
+
+        self.character_id = character_id
+
+        folder = CHARACTERS[
+            character_id
+        ]["folder"]
+
+        base = (
+            Path("assets")
+            / "characters"
+            / folder
+        )
+
+        self.animations = {
+            "idle": self.load_sheet(
+                base / "idle_aligned.png"
+            ),
+
+            "walk": self.load_sheet(
+                base / "walk_aligned.png"
+            ),
+
+            "run": self.load_sheet(
+                base / "run_aligned.png"
+            )
+        }
+
+        self.frame_index = 0
+        self.frame_timer = 0
